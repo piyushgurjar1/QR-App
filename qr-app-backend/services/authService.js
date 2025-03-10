@@ -5,6 +5,7 @@ const { JWT_SECRET } = require('../config/constants');
 
 const registerChild = async (name, parent_mail, username, parent_contact, password) => {
   // Check if the username already exists in either table
+  console.log("auth service ke andar register fn me control");
   const [existingUser] = await db.execute('SELECT * FROM user WHERE username = ?', [username]);
   const [existingChild] = await db.execute('SELECT * FROM child_info WHERE username = ?', [username]);
 
@@ -14,6 +15,7 @@ const registerChild = async (name, parent_mail, username, parent_contact, passwo
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  console.log("auth service ke andar register fn me db call tak control");
   const [result] = await db.execute(
     'INSERT INTO child_info (name, parent_mail, username, parent_contact, password) VALUES (?, ?, ?, ?, ?)',
     [name, parent_mail, username, parent_contact, hashedPassword]
