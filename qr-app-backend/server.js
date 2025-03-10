@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -6,7 +7,7 @@ const testRoutes = require('./routes/testRoutes');
 // const childRoutes = require('./routes/childRoutes');
 // const adminRoutes = require('./routes/adminRoutes');
 
-dotenv.config();
+// dotenv.config();
 
 const app = express();
 

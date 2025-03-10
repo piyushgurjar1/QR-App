@@ -1,4 +1,10 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
+const fs = require('fs');
+
+console.log("DB_HOST:", process.env.DB_HOST);
+console.log("DB_USER:", process.env.DB_USER);
+console.log("DB_PASSWORD:", process.env.DB_PASSWORD ? "*****" : "(empty)");
+console.log("DB_NAME:", process.env.DB_NAME);
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST, 
@@ -8,19 +14,12 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME, // Database name
   waitForConnections: true,
   connectionLimit: 10, // Adjust based on your needs
+  maxIdle: 10,
+  idleTimeout: 60000,
   queueLimit: 0,
-  ssl:"Amazon RDS",
-});
-
-// Test the connection
-pool.getConnection((err, connection) => {
-  if (err) {
-    console.error('Error connecting to the database:', err);
-  } else {
-    console.log('Successfully connected to the database');
-    connection.release();
-  }
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 });
 
 // Export the pool
-module.exports = pool.promise();
+module.exports = pool;
