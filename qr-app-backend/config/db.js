@@ -9,7 +9,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10, // Adjust based on your needs
   queueLimit: 0,
-  ssl:false,
+  ssl:"Amazon RDS",
 });
 
 // Test the connection
