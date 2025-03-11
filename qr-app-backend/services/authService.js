@@ -25,36 +25,36 @@ const registerChild = async (name, parent_mail, username, parent_contact, passwo
 };
 
 const loginUser = async (username, password) => {
-  // Check user table first
+  // Check the user table first
   const user = await User.findByUsername(username);
   let role = 'parent';
-  let userId = null;
 
   if (!user) {
-    // If not found, check child_info table
+    // If not found in the user table, check the child_info table
     const child = await Child.findByUsername(username);
     if (!child) {
       throw new Error('Invalid username or password');
     }
 
+    // Compare the password
     const isPasswordValid = await bcrypt.compare(password, child.password);
     if (!isPasswordValid) {
       throw new Error('Invalid username or password');
     }
-    userId = child.id;
+
     role = 'parent'; // Child is treated as a parent
   } else {
+    // Compare the password for admin/caretaker
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new Error('Invalid username or password');
     }
-    userId = user.id;
-    role = user.role; // admin/caretaker
+
+    role = user.role; // admin or caretaker
   }
-  if (!userId) {
-    throw new Error("User ID is undefined");
-  }
-  const token = jwt.sign({ id: userId, role }, JWT_SECRET, { expiresIn: '1h' });
+
+  // Generate a JWT token
+  const token = jwt.sign({ username, role }, JWT_SECRET, { expiresIn: '1h' });
 
   return { role, token };
 };
