@@ -6,7 +6,7 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT || '3306', 
   user: process.env.DB_USER, // RDS master username
   password: process.env.DB_PASSWORD, // RDS master password
-  database: process.env.DB_NAME, // Database name
+  database: process.env.DB_NAME, 
   waitForConnections: true,
   connectionLimit: 10, 
   maxIdle: 10,
