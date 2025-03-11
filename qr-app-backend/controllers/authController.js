@@ -8,9 +8,10 @@ const registerChild = async (req, res) => {
       return res.status(400).json({ error: 'Passwords do not match' });
     }
 
-    console.log("authservice ke phle control reach ho rha hai")
+    const name = `${child_first_name} ${child_last_name}`;
+
     const child = await authService.registerChild(
-      `${child_first_name} ${child_last_name}`,
+      name,
       parent_mail,
       username,
       parent_contact,

@@ -3,10 +3,9 @@ const db = require('../config/db');
 
 const router = express.Router();
 
-// Test database connection
+// Test db connection
 router.get('/test-db', async (req, res) => {
   try {
-    // Execute a simple query
     const [rows] = await db.query('SELECT 1 + 1 AS result');
     res.status(200).json({ message: 'Database connection successful', result: rows[0].result });
   } catch (err) {

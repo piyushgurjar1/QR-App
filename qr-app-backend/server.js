@@ -4,10 +4,9 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const testRoutes = require('./routes/testRoutes');
+const qrRoutes = require('./routes/qrRoutes');
 // const childRoutes = require('./routes/childRoutes');
 // const adminRoutes = require('./routes/adminRoutes');
-
-// dotenv.config();
 
 const app = express();
 
@@ -15,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/qr', qrRoutes);
 app.use('/api/test', testRoutes);
 // app.use('/api/child', childRoutes);
 // app.use('/api/admin', adminRoutes);
