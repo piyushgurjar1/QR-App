@@ -5,8 +5,8 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const testRoutes = require('./routes/testRoutes');
 const qrRoutes = require('./routes/qrRoutes');
-// const childRoutes = require('./routes/childRoutes');
-// const adminRoutes = require('./routes/adminRoutes');
+const childRoutes = require('./routes/childRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -16,8 +16,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/qr', qrRoutes);
 app.use('/api/test', testRoutes);
-// app.use('/api/child', childRoutes);
-// app.use('/api/admin', adminRoutes);
+app.use('/api/child', childRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
