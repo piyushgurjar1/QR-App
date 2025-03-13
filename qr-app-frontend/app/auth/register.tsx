@@ -1,186 +1,248 @@
-import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
-import { Link } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
-
-// Regex patterns for validation
-const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const phonePattern = /^[0-9]{10}$/;
-const passwordPattern = /^(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+import apiClient from '../api/apiClient';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  
-  // New state variables for fields
-  const [parentMail, setParentMail] = useState('');
-  const [parentContact, setParentContact] = useState('');
-  const [childFirstName, setChildFirstName] = useState('');
-  const [childLastName, setChildLastName] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    parentMail: '',
+    parentContact: '',
+    childFirstName: '',
+    childLastName: '',
+    username: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Handle the registration
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+
+    if (!formData.username) newErrors.username = 'Username is required';
+    if (!formData.childFirstName) newErrors.childFirstName = 'Child first name is required';
+    if (!formData.childLastName) newErrors.childLastName = 'Child last name is required';
+    if (!emailRegex.test(formData.parentMail)) newErrors.parentMail = 'Valid email is required';
+    if (!phoneRegex.test(formData.parentContact)) newErrors.parentContact = 'Valid 10-digit number required';
+    if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords must match';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleRegister = async () => {
-    // Basic validation for the fields
-    // if (!username || username.length < 3) {
-    //   Alert.alert('Validation Error', 'Username must be at least 3 characters long.');
-    //   return;
-    // }
-    // if (!childFirstName || childFirstName.length < 2) {
-    //   Alert.alert('Validation Error', 'Child first name must be at least 2 characters long.');
-    //   return;
-    // }
-    // if (!childLastName || childLastName.length < 2) {
-    //   Alert.alert('Validation Error', 'Child last name must be at least 2 characters long.');
-    //   return;
-    // }
-    // if (!parentMail || !emailPattern.test(parentMail)) {
-    //   Alert.alert('Validation Error', 'Please enter a valid parent email address.');
-    //   return;
-    // }
-    // if (!phonePattern.test(parentContact)) {
-    //   Alert.alert('Validation Error', 'Please enter a valid contact number (10 digits).');
-    //   return;
-    // }
-    // if (!password || !passwordPattern.test(password)) {
-    //   Alert.alert(
-    //     'Validation Error',
-    //     'Password must be at least 8 characters long, contain a lowercase letter, a number, and a special character.'
-    //   );
-    //   return;
-    // }
-    // if (password !== confirmPassword) {
-    //   Alert.alert('Validation Error', 'Password and Confirm Password must match.');
-    //   return;
-    // }
-
-    console.log('Register with:', { parentMail, parentContact, childFirstName, childLastName, username, password });
+    if (!validateForm()) return;
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
-        parent_mail: parentMail,
-        parent_contact: parentContact,
-        child_first_name: childFirstName,
-        child_last_name: childLastName,
-        username : username,
-        password : password,
-        confirm_password : confirmPassword
+      await apiClient.post('/auth/register', {
+        parent_mail: formData.parentMail,
+        parent_contact: formData.parentContact,
+        child_first_name: formData.childFirstName,
+        child_last_name: formData.childLastName,
+        username: formData.username,
+        password: formData.password,
+        confirm_password: formData.confirmPassword
       });
-      console.log(response.data);
-      Alert.alert('Registration Successful', 'Please log in with your new account.');
+      
+      Alert.alert('Success', 'Registration successful! Please login.');
       router.push('/auth/login');
     } catch (error: any) {
       console.error(error);
-      Alert.alert('Registration Failed', error.response?.data?.message || 'An error occurred during registration.');
+      Alert.alert('Error', error.response?.data?.message || 'Registration failed');
     }
   };
 
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
+    <ScrollView contentContainerStyle={styles.container}>
+      <Image 
+        source={require('../../assets/register_logo.png')} 
+        style={styles.logo} 
       />
+      <Text style={styles.title}>Student Registration</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Child First Name"
-        value={childFirstName}
-        onChangeText={setChildFirstName}
-      />
+      <View style={styles.form}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.sectionLabel}>Child Information</Text>
+          <TextInput
+            style={[styles.input, errors.childFirstName && styles.inputError]}
+            placeholder="Child's First Name"
+            value={formData.childFirstName}
+            onChangeText={(t) => handleChange('childFirstName', t)}
+          />
+          {errors.childFirstName && <Text style={styles.errorText}>{errors.childFirstName}</Text>}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Child Last Name"
-        value={childLastName}
-        onChangeText={setChildLastName}
-      />
+          <TextInput
+            style={[styles.input, errors.childLastName && styles.inputError]}
+            placeholder="Child's Last Name"
+            value={formData.childLastName}
+            onChangeText={(t) => handleChange('childLastName', t)}
+          />
+          {errors.childLastName && <Text style={styles.errorText}>{errors.childLastName}</Text>}
+        </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Parent Email"
-        value={parentMail}
-        onChangeText={setParentMail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+        <View style={styles.inputGroup}>
+          <Text style={styles.sectionLabel}>Parent Information</Text>
+          <TextInput
+            style={[styles.input, errors.parentMail && styles.inputError]}
+            placeholder="Parent Email"
+            value={formData.parentMail}
+            onChangeText={(t) => handleChange('parentMail', t)}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          {errors.parentMail && <Text style={styles.errorText}>{errors.parentMail}</Text>}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Parent Contact Number"
-        value={parentContact}
-        onChangeText={setParentContact}
-        keyboardType="phone-pad"
-      />
+          <TextInput
+            style={[styles.input, errors.parentContact && styles.inputError]}
+            placeholder="Parent Contact"
+            value={formData.parentContact}
+            onChangeText={(t) => handleChange('parentContact', t)}
+            keyboardType="phone-pad"
+          />
+          {errors.parentContact && <Text style={styles.errorText}>{errors.parentContact}</Text>}
+        </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+        <View style={styles.inputGroup}>
+          <Text style={styles.sectionLabel}>Account Details</Text>
+          <TextInput
+            style={[styles.input, errors.username && styles.inputError]}
+            placeholder="Username"
+            value={formData.username}
+            onChangeText={(t) => handleChange('username', t)}
+            autoCapitalize="none"
+          />
+          {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
+          <TextInput
+            style={[styles.input, errors.password && styles.inputError]}
+            placeholder="Password"
+            value={formData.password}
+            onChangeText={(t) => handleChange('password', t)}
+            secureTextEntry
+          />
+          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-      <Pressable style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Create Account</Text>
-      </Pressable>
+          <TextInput
+            style={[styles.input, errors.confirmPassword && styles.inputError]}
+            placeholder="Confirm Password"
+            value={formData.confirmPassword}
+            onChangeText={(t) => handleChange('confirmPassword', t)}
+            secureTextEntry
+          />
+          {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+        </View>
 
-      <Link href="/" style={styles.link}>
-        Back to Home
-      </Link>
-    </View>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={handleRegister}
+          activeOpacity={0.9}
+        >
+          <Text style={styles.buttonText}>Create Account</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.linkButton} 
+          onPress={() => router.push('/')}
+        >
+          <Text style={styles.linkText}>Already have an account? Login</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
+    flexGrow: 1,
+    backgroundColor: 'rgba(255, 250, 240, 1.00)', 
+    padding: 24,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 24,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1a365d',
+    marginBottom: 32,
     textAlign: 'center',
   },
+  form: {
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  inputGroup: {
+    marginBottom: 32,
+  },
+  sectionLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2d3748',
+    marginBottom: 16,
+    paddingLeft: 8,
+  },
   input: {
-    height: 50,
-    borderColor: '#ddd',
+    backgroundColor: 'white',
+    height: 56,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 15,
+    borderColor: '#e2e8f0',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  inputError: {
+    borderColor: '#ff4444',
+    borderWidth: 2,
+  },
+  errorText: {
+    color: '#ff4444',
+    fontSize: 14,
+    marginBottom: 12,
+    paddingLeft: 8,
   },
   button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: '#1a73e8',
+    paddingVertical: 18,
+    borderRadius: 14,
+    marginTop: 16,
+    shadowColor: '#1a73e8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-  },
-  link: {
-    color: '#007AFF',
     textAlign: 'center',
-    marginTop: 20,
+  },
+  linkButton: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: '#4a5568',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

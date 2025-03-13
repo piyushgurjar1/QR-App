@@ -1,34 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router'; 
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Alert, 
-  ScrollView, 
-  TouchableOpacity, 
-  ActivityIndicator 
-} from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from '../api/apiClient';
 import { MaterialIcons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
 
-export default function ParentPage() {
-  const router = useRouter(); 
+export default function CareTakerHomeScreen() {
+  const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await apiClient.get('/parent/dashboard', {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await apiClient.get('/caretaker/dashboard', {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setUserData(response.data);
     } catch (error) {
       console.log('Error fetching user data', error);
-      Alert.alert('Error', 'Failed to fetch user data');
     } finally {
       setLoading(false);
     }
@@ -41,11 +31,14 @@ export default function ParentPage() {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('userToken');
-      router.push("/");
+      router.push('/');
     } catch (error) {
       console.log('Logout error:', error);
-      Alert.alert('Error', 'Failed to logout');
     }
+  };
+
+  const handleScanRedirect = () => {
+    router.push('/careTaker/scanner');
   };
 
   if (loading) {
@@ -63,8 +56,16 @@ export default function ParentPage() {
       <View style={styles.header}>
         <View style={styles.profileHeader}>
           <MaterialIcons name="account-circle" size={80} color="#2C3E50" />
-          <Text style={styles.welcomeText}>Welcome, {userData?.name}</Text>
+          <View style={styles.profileTextContainer}>
+            <Text style={styles.welcomeText}>{userData?.name}</Text>
+            <Text style={styles.roleText}>{userData?.role.toUpperCase()}</Text>
+          </View>
         </View>
+        
+        {/* Scan FAB Button */}
+        <TouchableOpacity style={styles.scanFab} onPress={handleScanRedirect}>
+          <MaterialIcons name="qr-code-scanner" size={28} color="white" />
+        </TouchableOpacity>
       </View>
 
       {/* Profile Information Card */}
@@ -75,36 +76,14 @@ export default function ParentPage() {
         </View>
 
         <InfoRow icon="alternate-email" label="Username" value={userData?.username} />
-        <InfoRow icon="email" label="Email" value={userData?.parent_mail} />
-        <InfoRow icon="phone" label="Contact" value={userData?.parent_contact} />
-        
-        <TouchableOpacity style={styles.passwordButton}>
-          <MaterialIcons name="lock" size={20} color="#2C3E50" />
-          <Text style={styles.passwordButtonText}>Change Password</Text>
-        </TouchableOpacity>
+        <InfoRow icon="email" label="Email" value={userData?.email} />
+        <InfoRow icon="phone" label="Contact" value={userData?.contact} />
       </View>
 
-      {/* QR Code Section */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="qr-code" size={24} color="#2C3E50" />
-          <Text style={styles.cardTitle}>Student QR Code</Text>
-        </View>
-        
-        <View style={styles.qrCodeContainer}>
-          <QRCode
-            value={userData?.qr_code}
-            size={250}
-            ecl="H"
-            backgroundColor="transparent"
-            color="#2C3E50"
-          />
-         
-        </View>
-      </View>
+      {/* Logout Button */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <MaterialIcons name="logout" size={24} color="#E74C3C" />
-        <Text style={styles.logoutButtonText}>Logout</Text>
+        <MaterialIcons name="logout" size={20} color="white" />
+        <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -113,8 +92,10 @@ export default function ParentPage() {
 const InfoRow = ({ icon, label, value }: any) => (
   <View style={styles.infoRow}>
     <MaterialIcons name={icon} size={20} color="#E67E22" />
-    <Text style={styles.label}>{label}</Text>
-    <Text style={styles.value}>{value}</Text>
+    <View style={styles.infoTextContainer}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{value}</Text>
+    </View>
   </View>
 );
 
@@ -138,7 +119,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#FDF5E6',
-    paddingVertical: 40,
+    paddingVertical: 30,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -146,15 +127,41 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   profileHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 20,
+  },
+  profileTextContainer: {
+    marginLeft: 15,
   },
   welcomeText: {
     fontSize: 24,
     fontWeight: '600',
     color: '#2C3E50',
-    marginTop: 15,
-    textAlign: 'center',
     fontFamily: 'Roboto-Bold',
+  },
+  roleText: {
+    fontSize: 14,
+    color: '#E67E22',
+    fontWeight: '600',
+    marginTop: 5,
+    letterSpacing: 0.5,
+  },
+  scanFab: {
+    position: 'absolute',
+    right: 25,
+    top: 25,
+    backgroundColor: '#27ae60',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   card: {
     backgroundColor: 'white',
@@ -162,8 +169,8 @@ const styles = StyleSheet.create({
     padding: 20,
     marginHorizontal: 20,
     marginBottom: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#2C3E50',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
@@ -190,63 +197,43 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F5F1EB',
   },
-  label: {
-    fontSize: 15,
-    color: '#34495E',
-    marginLeft: 12,
-    width: 100,
-    fontFamily: 'Roboto-Medium',
-  },
-  value: {
+  infoTextContainer: {
     flex: 1,
-    fontSize: 15,
-    color: '#2C3E50',
-    fontWeight: '500',
-    fontFamily: 'Roboto-Regular',
+    marginLeft: 15,
   },
-  passwordButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#FFF8E1',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EDE7DC',
-  },
-  passwordButtonText: {
-    fontSize: 15,
-    color: '#E67E22',
-    fontWeight: '600',
-    marginLeft: 10,
-    fontFamily: 'Roboto-Medium',
-  },
-  qrCodeContainer: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  qrHelpText: {
+  label: {
     fontSize: 14,
     color: '#95A5A6',
-    textAlign: 'center',
-    marginTop: 20,
-    lineHeight: 20,
-    maxWidth: 300,
-    fontFamily: 'Roboto-Italic',
+    fontFamily: 'Roboto-Regular',
+  },
+  value: {
+    fontSize: 16,
+    color: '#2C3E50',
+    fontWeight: '500',
+    marginTop: 4,
+    fontFamily: 'Roboto-Medium',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FDEDEC',
-    padding: 15,
+    backgroundColor: '#e74c3c',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
     borderRadius: 12,
-    margin: 20,
+    marginHorizontal: 20,
+    marginTop: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
-  logoutButtonText: {
+  logoutText: {
+    color: 'white',
     fontSize: 16,
-    color: '#E74C3C',
     fontWeight: '600',
     marginLeft: 10,
+    fontFamily: 'Roboto-Medium',
   },
 });

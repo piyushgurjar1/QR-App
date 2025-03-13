@@ -3,9 +3,9 @@ const notificationService = require('../services/notificationService');
 const { decodeQRCode } = require('../utils/qrUtils');
 
 const scanQRCode = async (req, res) => {
+  
   try {
     const { qrData } = req.body;
-
     // Decode the QR code asynchronously
     const username = await decodeQRCode(qrData); // Ensure you await the result
     console.log("username after decoding:", username);
