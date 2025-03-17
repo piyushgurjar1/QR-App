@@ -2,6 +2,7 @@ const Child = require('../models/Child');
 const { sendPushNotification } = require('../services/notificationService');
 
 const scanQRCode = async (req, res) => {
+  
   try {
     const { username } = req.body;
     console.log('Username after decoding:', username);

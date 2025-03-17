@@ -1,28 +1,50 @@
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { useState, useEffect } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import apiClient from '../api/apiClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function QRScannerScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
-  // Verify permissions
   useEffect(() => {
     if (permission && !permission.granted) {
       requestPermission();
     }
   }, [permission]);
 
-  const handleQRScanned = ({ data }: { data: string }) => {
+  const handleQRScanned = async ({ data }: { data: string }) => {
     setScanned(true);
-    Alert.alert("QR Code Scanned", data, [
-      { text: "OK", onPress: () => setScanned(false) }
-    ]);
+    const token = await AsyncStorage.getItem('userToken');
+
+        if (!token) {
+          Alert.alert('Error', 'User is not authenticated.');
+          return;
+        }
+    try {
+      await apiClient.post("/qr/scan", 
+      { qrData: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+      Alert.alert("QR Code Scanned", "Data sent successfully", [
+        { text: "OK", onPress: () => setScanned(false) }
+      ]);
+    } catch (error) {
+      console.error("Error sending QR data:", error);
+      Alert.alert("Error", "Failed to send QR code data", [
+        { text: "OK", onPress: () => setScanned(false) }
+      ]);
+    }
   };
 
   const toggleCameraFacing = () => {
-    setFacing(current => (current === "back" ? "front" : "back"));
+    setFacing((current) => (current === "back" ? "front" : "back"));
   };
 
   if (!permission) {
@@ -61,10 +83,7 @@ export default function QRScannerScreen() {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.flipButton}
-            onPress={toggleCameraFacing}
-          >
+          <TouchableOpacity style={styles.flipButton} onPress={toggleCameraFacing}>
             <Text style={styles.buttonText}>Flip Camera</Text>
           </TouchableOpacity>
         </View>
