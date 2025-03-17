@@ -9,25 +9,28 @@ const scanQRCode = async (req, res) => {
 
     // Check if username is valid
     if (!username) {
+      console.log("Control reached till !usernme");
       return res.status(400).json({ error: 'Invalid QR code data' });
     }
 
     // Find child by username
     const child = await Child.findByUsername(username);
     if (!child) {
+      console.log("Control reached till !child");
       return res.status(404).json({ error: 'Child not found' });
     }
 
     // Check if the parent's device token is available
-    if (!child.parent_device_token) {
+    if (!child.device_token) {
+      console.log("Control reached till !parent_token");
       return res.status(400).json({ error: 'Parent device token not found' });
     }
 
-    console.log(`Sending notification to parent with token: ${child.parent_device_token}`);
+    console.log(`Sending notification to parent with token: ${child.device_token}`);
 
     // Send notification to parent
     await sendPushNotification(
-      child.parent_device_token, // Parent's device token
+      child.device_token, // Parent's device token
       'Child Pickup', // Notification title
       `Your child ${child.name} is ready for pickup!` // Notification body
     );

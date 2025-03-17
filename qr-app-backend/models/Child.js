@@ -6,12 +6,12 @@ class Child {
     return rows[0];
   }
 
-  static async create(name, parent_mail, username, parent_contact, password, parent_device_token) {
+  static async create(name, parent_mail, username, parent_contact, password, device_token) {
     const [result] = await db.query(
-      'INSERT INTO child_info (name, parent_mail, username, parent_contact, password, parent_device_token) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, parent_mail, username, parent_contact, password, parent_device_token]
+      'INSERT INTO child_info (name, parent_mail, username, parent_contact, password, device_token) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, parent_mail, username, parent_contact, password, device_token]
     );
-    return { id: result.insertId, name, parent_mail, username, parent_contact, parent_device_token };
+    return { id: result.insertId, name, parent_mail, username, parent_contact, device_token };
   }
 }
 
