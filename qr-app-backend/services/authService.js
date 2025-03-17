@@ -43,7 +43,7 @@ const loginUser = async (username, password, deviceToken) => {
     role = 'parent'; // Child is treated as a parent
 
     // Update the parent's device token in the database
-    await db.query('UPDATE child_info SET parent_device_token = ? WHERE username = ?', [deviceToken, username]);
+    await db.query('UPDATE child_info SET device_token = ? WHERE username = ?', [deviceToken, username]);
   } else {
     // Compare the password for admin/caretaker
     const isPasswordValid = await bcrypt.compare(password, user.password);
