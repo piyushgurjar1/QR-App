@@ -5,7 +5,7 @@ const User = require('../models/User');
 const Child = require('../models/Child');
 const { JWT_SECRET } = require('../config/constants');
 
-const registerChild = async (name, parent_mail, username, parent_contact, password, parent_device_token) => {
+const registerChild = async (name, parent_mail, username, parent_contact, password) => {
   // Check if the uname already exists
   const existingUser = await User.findByUsername(username);
   const existingChild = await Child.findByUsername(username);
@@ -19,7 +19,7 @@ const registerChild = async (name, parent_mail, username, parent_contact, passwo
   console.log('Inserting:', [name, parent_mail, username, parent_contact, password, null]);
   const child = await Child.create(name, parent_mail, username, parent_contact, hashedPassword, null);
   
-  return { ...child, qrCode };
+  return { ...child };
 };
 
 const loginUser = async (username, password, deviceToken) => {
