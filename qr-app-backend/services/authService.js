@@ -1,12 +1,11 @@
 const bcrypt = require('bcryptjs');
-const { generateQRCode } = require('../utils/qrUtils');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const User = require('../models/User');
 const Child = require('../models/Child');
 const { JWT_SECRET } = require('../config/constants');
 
-const registerChild = async (name, parent_mail, username, parent_contact, password) => {
+const registerChild = async (name, parent_mail, username, parent_contact, password, parent_device_token) => {
   // Check if the uname already exists
   const existingUser = await User.findByUsername(username);
   const existingChild = await Child.findByUsername(username);
@@ -16,15 +15,14 @@ const registerChild = async (name, parent_mail, username, parent_contact, passwo
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const qrCode = await generateQRCode(username);
 
-  console.log('Inserting:', [name, parent_mail, username, parent_contact, password, qrCode]);
-  const child = await Child.create(name, parent_mail, username, parent_contact, hashedPassword,qrCode);
+  console.log('Inserting:', [name, parent_mail, username, parent_contact, password, null]);
+  const child = await Child.create(name, parent_mail, username, parent_contact, hashedPassword, null);
   
   return { ...child, qrCode };
 };
 
-const loginUser = async (username, password) => {
+const loginUser = async (username, password, deviceToken) => {
   // Check the user table first
   const user = await User.findByUsername(username);
   let role = 'parent';
@@ -43,13 +41,15 @@ const loginUser = async (username, password) => {
     }
 
     role = 'parent'; // Child is treated as a parent
+
+    // Update the parent's device token in the database
+    await db.query('UPDATE child_info SET parent_device_token = ? WHERE username = ?', [deviceToken, username]);
   } else {
     // Compare the password for admin/caretaker
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new Error('Invalid username or password');
     }
-
     role = user.role; // admin or caretaker
   }
 

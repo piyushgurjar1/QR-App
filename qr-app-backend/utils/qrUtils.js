@@ -3,15 +3,6 @@ const jsQR = require('jsqr');
 const sharp = require('sharp');
 
 
-const generateQRCode = async (data) => {
-  try {
-    const qrCode = await QRCode.toDataURL(data);
-    return qrCode;
-  } catch (err) {
-    throw new Error('Failed to generate QR code: ' + err.message);
-  }
-};
-
 const decodeQRCode = async (qrData) => {
   try {
       const base64String = qrData.replace(/^data:image\/\w+;base64,/, '');
@@ -32,4 +23,4 @@ const decodeQRCode = async (qrData) => {
   }
 };
 
-module.exports = { generateQRCode, decodeQRCode };
+module.exports = { decodeQRCode };

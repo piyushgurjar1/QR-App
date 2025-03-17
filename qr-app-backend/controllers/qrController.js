@@ -1,14 +1,10 @@
 const Child = require('../models/Child');
-const notificationService = require('../services/notificationService');
-const { decodeQRCode } = require('../utils/qrUtils');
+const { sendPushNotification } = require('../services/notificationService');
 
 const scanQRCode = async (req, res) => {
   try {
-    const { qrData } = req.body;
-
-    // Decode the QR code asynchronously
-    const username = await decodeQRCode(qrData); // Ensure you await the result
-    console.log("username after decoding:", username);
+    const { username } = req.body;
+    console.log('Username after decoding:', username);
 
     // Check if username is valid
     if (!username) {
@@ -21,13 +17,19 @@ const scanQRCode = async (req, res) => {
       return res.status(404).json({ error: 'Child not found' });
     }
 
-    console.log(`Notification sent to ${child.parent_mail}: Your child is ready for pickup!`);
+    // Check if the parent's device token is available
+    if (!child.parent_device_token) {
+      return res.status(400).json({ error: 'Parent device token not found' });
+    }
+
+    console.log(`Sending notification to parent with token: ${child.parent_device_token}`);
 
     // Send notification to parent
-    // await notificationService.sendNotification(
-    //   child.parent_mail,
-    //   'Your child is ready for pickup!'
-    // );
+    await sendPushNotification(
+      child.parent_device_token, // Parent's device token
+      'Child Pickup', // Notification title
+      `Your child ${child.name} is ready for pickup!` // Notification body
+    );
 
     res.status(200).json({ message: 'Notification sent to parent', child });
   } catch (err) {
