@@ -1,5 +1,5 @@
 const Child = require('../models/Child');
-
+const {sendPushNotification} = require('../services/notificationService')
 const scanQRCode = async (req, res) => {
   
   try {
