@@ -1,7 +1,6 @@
 const Child = require('../models/Child');
 const {sendPushNotification} = require('../services/notificationService')
 const scanQRCode = async (req, res) => {
-  
   try {
     const { username } = req.body;
     console.log('Username after decoding:', username);
@@ -25,13 +24,22 @@ const scanQRCode = async (req, res) => {
     console.log(`Sending notification to parent with token: ${child.device_token}`);
 
     // Send notification to parent
-    await sendPushNotification(
-      child.device_token, // Parent's device token
-      'Child Pickup', // Notification title
-      `Your child ${child.name} is ready for pickup!` // Notification body
+    const notificationResult = await sendPushNotification(
+      child.device_token,
+      'Child Pickup',
+      `Your child ${child.name} is ready for pickup!`
     );
 
-    res.status(200).json({ message: 'Notification sent to parent', child });
+    // Check if there was an error but don't fail the API response
+    if (notificationResult && notificationResult.error) {
+      console.warn(`Notification might not have been delivered: ${notificationResult.error}`);
+    }
+
+    res.status(200).json({ 
+      message: 'QR code scanned successfully', 
+      notificationSent: !notificationResult.error,
+      child 
+    });
   } catch (err) {
     console.error('Error in scanQRCode:', err.message);
     res.status(500).json({ error: err.message });
