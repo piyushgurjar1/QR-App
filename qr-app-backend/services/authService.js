@@ -6,20 +6,25 @@ const Child = require('../models/Child');
 const { JWT_SECRET } = require('../config/constants');
 
 const registerChild = async (name, parent_mail, username, parent_contact, password) => {
-  // Check if the uname already exists
-  const existingUser = await User.findByUsername(username);
-  const existingChild = await Child.findByUsername(username);
+  try {
+    // Check if the username already exists
+    const existingUser = await User.findByUsername(username);
+    const existingChild = await Child.findByUsername(username);
+    if (existingUser || existingChild) {
+      throw new Error('Username already exists');
+    }
 
-  if (existingUser || existingChild) {
-    throw new Error('Username already exists');
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('Inserting:', [name, parent_mail, username, parent_contact, password, null]);
+
+    // Insert the new child record
+    const child = await Child.create(name, parent_mail, username, parent_contact, hashedPassword, null);
+    
+    return { ...child };
+  } catch (error) {
+    console.error('Registration failed:', error.message);
+    throw new Error('Registration failed: ' + error.message);
   }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  console.log('Inserting:', [name, parent_mail, username, parent_contact, password, null]);
-  const child = await Child.create(name, parent_mail, username, parent_contact, hashedPassword, null);
-  
-  return { ...child };
 };
 
 const loginUser = async (username, password, deviceToken) => {

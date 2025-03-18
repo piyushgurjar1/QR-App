@@ -23,6 +23,7 @@ const registerChild = async (req, res) => {
     
   } catch (err) {
     console.log("Child not registered successfully")
+    console.log(err.message)
     res.status(500).json({ error: err.message });
   }
 };
