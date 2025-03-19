@@ -31,6 +31,7 @@ const sendPushNotification = async (deviceToken, title, body) => {
     };
 
     const response = await admin.messaging().send(message);
+    console.log(deviceToken);
     console.log('Notification sent successfully:', response);
     return response;
   } catch (err) {
