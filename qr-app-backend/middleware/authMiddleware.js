@@ -12,7 +12,7 @@ const authorize = (allowedRoles) => {
     try {
       // Verify the token
       const decoded = jwt.verify(token, JWT_SECRET);
-
+      console.log(decoded);
       // Check if the user's role is allowed
       if (!allowedRoles.includes(decoded.role)) {
         return res.status(403).json({ error: 'Access denied. You do not have permission.' });

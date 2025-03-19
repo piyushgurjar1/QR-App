@@ -6,6 +6,11 @@ class Child {
     return rows[0];
   }
 
+  static async findById(childId) {
+    const [rows] = await db.query('SELECT * FROM child_info WHERE id = ?', [childId]);
+    return rows[0];
+  }
+  
   static async create(name, parent_mail, username, parent_contact, password, device_token) {
     try {
       const [result] = await db.query(
