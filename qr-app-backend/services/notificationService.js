@@ -15,12 +15,15 @@ const sendPushNotification = async (deviceToken, title, body) => {
         title,
         body,
       },
+      data: {
+        customKey: 'customValue', // Add any custom data you want to send
+        title,
+        body,
+      },
       token: deviceToken,
-      // Add high priority to improve delivery chances
       android: {
         priority: "high",
       },
-      // Add content_available for iOS to wake up the app
       apns: {
         payload: {
           aps: {
