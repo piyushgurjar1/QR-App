@@ -39,6 +39,10 @@ const loginUser = async (username, password, deviceToken) => {
       throw new Error('Invalid username or password');
     }
 
+    console.log('🔍 Comparing password for child...');
+    console.log('Entered password:', password);
+    console.log('Stored hash:', child.password);
+
     // Compare the password
     const isPasswordValid = await bcrypt.compare(password, child.password);
     if (!isPasswordValid) {
@@ -51,8 +55,13 @@ const loginUser = async (username, password, deviceToken) => {
     await db.query('UPDATE child_info SET device_token = ? WHERE username = ?', [deviceToken, username]);
   } else {
     // Compare the password for admin/caretaker
+    console.log('👨‍🏫 User found:', user);
+    console.log('🔍 Comparing password for user...');
+    console.log('Entered password:', password);
+    console.log('Stored hash:', user.password);
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log('❌ Incorrect password for user');
       throw new Error('Invalid username or password');
     }
     role = user.role; // admin or caretaker
