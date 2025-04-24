@@ -53,5 +53,5 @@ const sendPushNotification = async (deviceToken, title, body) => {
   }
 };
 
-  
+
 module.exports = { sendPushNotification };
