@@ -39,7 +39,7 @@
 //     }
 
 //     // Migrate children
-//     const [children] = await connection.query('SELECT * FROM child_info');
+//     const [children] = await connection.query('SELECT * FROM ChildInfo');
 //     for (const child of children) {
 //       const params = {
 //         TableName: 'AppData',

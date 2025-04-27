@@ -35,7 +35,7 @@ const loginUser = async (username, password, deviceToken) => {
 
   let role = 'parent';
   if (!user) {
-    // If not found in the user table, check the child_info table
+    // If not found in the user table, check the ChildInfo table
     const child = await Child.findByUsername(username);
     if (!child) {
       throw new Error('Invalid username or password');
@@ -54,7 +54,7 @@ const loginUser = async (username, password, deviceToken) => {
     role = 'parent'; // Child is treated as a parent
 
     // Update the parent's device token in the database
-    await db.query('UPDATE child_info SET device_token = ? WHERE username = ?', [deviceToken, username]);
+    await db.query('UPDATE ChildInfo SET device_token = ? WHERE username = ?', [deviceToken, username]);
   } else {
     // Compare the password for admin/caretaker
     console.log('👨‍🏫 User found:', user);

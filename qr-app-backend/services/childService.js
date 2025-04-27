@@ -14,7 +14,7 @@ const getChildById = async (childId) => {
 
 const getAllChildren = async () => {
   try {
-    const [rows] = await db.query('SELECT * FROM child_info');
+    const [rows] = await db.query('SELECT * FROM ChildInfo');
     return rows;
   } catch (err) {
     throw new Error(err.message);
