@@ -148,12 +148,6 @@ export default function RegisterScreen() {
           <Text style={styles.buttonText}>Create Account</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.linkButton} 
-          onPress={() => router.push('/')}
-        >
-          <Text style={styles.linkText}>Already have an account? Login</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );

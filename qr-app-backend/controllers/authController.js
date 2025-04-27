@@ -31,7 +31,7 @@ const registerChild = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { username, password, deviceToken } = req.body;
-
+    console.log("Login request received");
     const { role, token } = await authService.loginUser(username, password, deviceToken);
 
     res.status(200).json({ message: 'Login successful', role, token });

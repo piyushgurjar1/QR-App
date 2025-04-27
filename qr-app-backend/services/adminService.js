@@ -3,7 +3,7 @@ const User = require('../models/User');
 
 const getAllUsers = async (role) => {
     try {
-      const query = role ? 'SELECT * FROM user WHERE role = ?' : 'SELECT * FROM user';
+      const query = role ? 'SELECT * FROM Users WHERE role = ?' : 'SELECT * FROM Users';
       const [rows] = await db.query(query, role ? [role] : []);
       return rows;
     } catch (err) {

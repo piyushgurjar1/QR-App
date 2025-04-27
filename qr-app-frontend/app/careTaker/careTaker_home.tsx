@@ -1,14 +1,42 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from '../api/apiClient';
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
+import RegisterScreen from '../auth/register';
+import { useAuth } from '../auth/AuthContext';
+// Define types for your data
+interface UserData {
+  name: string;
+  role: string;
+  username: string;
+  email: string;
+  contact: string;
+}
+
+// Define props for the InfoRow component
+interface InfoRowProps {
+  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  label: string;
+  value: string | undefined;
+}
+
+// Extend RegisterScreen props
+interface RegisterScreenProps {
+  onSuccess?: () => void;
+}
+
+// Extend the RegisterScreen component to accept onSuccess prop
+const RegisterScreenWithProps = RegisterScreen as React.ComponentType<RegisterScreenProps>;
 
 export default function CareTakerHomeScreen() {
   const router = useRouter();
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const { logout } = useAuth();
+
 
   const fetchUserData = async () => {
     try {
@@ -28,14 +56,6 @@ export default function CareTakerHomeScreen() {
     fetchUserData();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem('userToken');
-      router.push('/');
-    } catch (error) {
-      console.log('Logout error:', error);
-    }
-  };
 
   const handleScanRedirect = () => {
     router.push('/careTaker/scanner');
@@ -51,45 +71,82 @@ export default function CareTakerHomeScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <View style={styles.profileHeader}>
-          <MaterialIcons name="account-circle" size={80} color="#2C3E50" />
-          <View style={styles.profileTextContainer}>
-            <Text style={styles.welcomeText}>{userData?.name}</Text>
-            <Text style={styles.roleText}>{userData?.role.toUpperCase()}</Text>
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <View style={styles.profileHeader}>
+            <MaterialIcons name="account-circle" size={80} color="#2C3E50" />
+            <View style={styles.profileTextContainer}>
+              <Text style={styles.welcomeText}>{userData?.name}</Text>
+              <Text style={styles.roleText}>{userData?.role.toUpperCase()}</Text>
+            </View>
+          </View>
+          
+          {/* Scan FAB Button */}
+          <TouchableOpacity style={styles.scanFab} onPress={handleScanRedirect}>
+            <MaterialIcons name="qr-code-scanner" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Actions Card */}
+        <TouchableOpacity 
+        style={styles.addStudentButton} 
+        onPress={() => setShowStudentModal(true)}
+      >
+        <MaterialIcons name="person-add" size={22} color="white" />
+        <Text style={styles.addStudentButtonText}>Add New Student</Text>
+      </TouchableOpacity>
+
+
+        {/* Profile Information Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <MaterialIcons name="person" size={24} color="#2C3E50" />
+            <Text style={styles.cardTitle}>Profile Info</Text>
+          </View>
+
+          <InfoRow icon="alternate-email" label="Username" value={userData?.username} />
+          <InfoRow icon="email" label="Email" value={userData?.email} />
+          <InfoRow icon="phone" label="Contact" value={userData?.contact} />
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+          <MaterialIcons name="logout" size={20} color="white" />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Student Registration Modal */}
+      <Modal
+        visible={showStudentModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowStudentModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add New Students</Text>
+              <TouchableOpacity onPress={() => setShowStudentModal(false)}>
+                <MaterialIcons name="close" size={24} color="#2C3E50" />
+              </TouchableOpacity>
+            </View>
+            <RegisterScreenWithProps 
+              onSuccess={() => {
+                setShowStudentModal(false);
+                fetchUserData();
+              }}
+            />
           </View>
         </View>
-        
-        {/* Scan FAB Button */}
-        <TouchableOpacity style={styles.scanFab} onPress={handleScanRedirect}>
-          <MaterialIcons name="qr-code-scanner" size={28} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Profile Information Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="person" size={24} color="#2C3E50" />
-          <Text style={styles.cardTitle}>Profile Information</Text>
-        </View>
-
-        <InfoRow icon="alternate-email" label="Username" value={userData?.username} />
-        <InfoRow icon="email" label="Email" value={userData?.email} />
-        <InfoRow icon="phone" label="Contact" value={userData?.contact} />
-      </View>
-
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <MaterialIcons name="logout" size={20} color="white" />
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </Modal>
+    </View>
   );
 }
 
-const InfoRow = ({ icon, label, value }: any) => (
+const InfoRow: React.FC<InfoRowProps> = ({ icon, label, value }) => (
   <View style={styles.infoRow}>
     <MaterialIcons name={icon} size={20} color="#E67E22" />
     <View style={styles.infoTextContainer}>
@@ -190,6 +247,21 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontFamily: 'Roboto-Medium',
   },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3498db',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 10,
+  },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -235,5 +307,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 10,
     fontFamily: 'Roboto-Medium',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    width: '90%',
+    maxWidth: 500,
+    maxHeight: '90%',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDE7DC',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  addStudentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3498db',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 25,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  addStudentButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 10,
   },
 });

@@ -1,85 +1,62 @@
+// AdminPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router'; 
 import { 
   View, 
   Text, 
-  TextInput, 
   FlatList, 
   Modal, 
   TouchableOpacity, 
   StyleSheet, 
-  Alert, 
-  ScrollView, 
-  KeyboardAvoidingView, 
-  Platform 
+  Alert
 } from 'react-native';
 import apiClient from '../api/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
+import UserForm from './UserForm';
+import { useAuth } from '../auth/AuthContext';
 
 export default function AdminPage() {
   const router = useRouter(); 
   const [caretakers, setCaretakers] = useState<any[]>([]);
-  const [isAddingCaretaker, setIsAddingCaretaker] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    contact: '',
-    username: '',
-    password: '',
-    role: 'caretaker'
-  });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
+  const [isAddingUser, setIsAddingUser] = useState(false);
+  const [activeTab, setActiveTab] = useState<'admin' | 'caretaker'>('admin');
+  const { logout } = useAuth()
   useEffect(() => {
-    const fetchCaretakers = async () => {
-      try {
-        const token = await AsyncStorage.getItem('userToken');
-        const response = await apiClient.get('/admin/users', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setCaretakers(response.data || []);
-      } catch (error) {
-        Alert.alert('Error', 'Failed to fetch users');
-      }
-    };
     fetchCaretakers();
   }, []);
 
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-    const phoneRegex = /^[0-9]{10}$/;
-
-    if (!formData.name.trim()) errors.name = 'Name is required';
-    if (!emailRegex.test(formData.email)) errors.email = 'Valid email required';
-    if (!phoneRegex.test(formData.contact)) errors.contact = 'Valid 10-digit number required';
-    if (!formData.username.trim()) errors.username = 'Username required';
-    if (formData.password.length < 6) errors.password = 'Minimum 6 characters';
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleAddCaretaker = async () => {
-    if (!validateForm()) return;
-
+  const fetchCaretakers = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await apiClient.post('/admin/users', formData, {
+      const response = await apiClient.get('/admin/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCaretakers(response.data || []);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch users');
+    }
+  };
+
+  const handleAddUser = async (userData: any) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      const response = await apiClient.post('/admin/users', userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       setCaretakers(prev => [...prev, response.data]);
-      setIsAddingCaretaker(false);
-      setFormData({ name: '', email: '', contact: '', username: '', password: '', role: 'caretaker' });
+      setIsAddingUser(false);
       Alert.alert('Success', 'User added successfully');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to add user');
+    } catch (error : any) {
+      Alert.alert('Error', error.response?.data?.message || 'Registration failed');
     }
   };
 
-  // Enhanced user card without action buttons.
+  // Filter users based on active tab
+  const filteredUsers = caretakers.filter(user => user.role === activeTab);
+
+  // Enhanced user card with proper text truncation
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.userCard}>
       <View style={[styles.cardRoleStrip, item.role === 'admin' ? styles.adminStrip : styles.caretakerStrip]}>
@@ -91,55 +68,29 @@ export default function AdminPage() {
         <Text style={styles.roleText}>{item.role.toUpperCase()}</Text>
       </View>
       <View style={styles.cardBody}>
-        <Text style={styles.userName}>{item.name}</Text>
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
+          </View>
+        </View>
+        <Text style={styles.userName} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
         <View style={styles.detailContainer}>
           <View style={styles.detailRow}>
             <MaterialIcons name="alternate-email" size={16} color="#7f8c8d" />
-            <Text style={styles.detailText}>{item.username}</Text>
+            <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="tail">{item.username}</Text>
           </View>
           <View style={styles.detailRow}>
             <MaterialIcons name="email" size={16} color="#7f8c8d" />
-            <Text style={styles.detailText}>{item.email}</Text>
+            <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="tail">{item.email}</Text>
           </View>
           <View style={styles.detailRow}>
             <MaterialIcons name="phone" size={16} color="#7f8c8d" />
-            <Text style={styles.detailText}>{item.contact}</Text>
+            <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="tail">{item.contact}</Text>
           </View>
         </View>
       </View>
     </View>
   );
-
-  const RoleSelector = () => (
-    <View style={styles.roleContainer}>
-      <TouchableOpacity
-        style={[styles.roleButton, formData.role === 'admin' && styles.selectedRole]}
-        onPress={() => setFormData(prev => ({ ...prev, role: 'admin' }))}
-      >
-        <Text style={[styles.roleButtonText, formData.role === 'admin' && styles.selectedRoleText]}>
-          Admin
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.roleButton, formData.role === 'caretaker' && styles.selectedRole]}
-        onPress={() => setFormData(prev => ({ ...prev, role: 'caretaker' }))}
-      >
-        <Text style={[styles.roleButtonText, formData.role === 'caretaker' && styles.selectedRoleText]}>
-          Caretaker
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem('userToken');
-      router.push("/");
-    } catch (error) {
-      console.log('Logout error:', error);
-      Alert.alert('Error', 'Failed to logout');
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -147,105 +98,68 @@ export default function AdminPage() {
         <Text style={styles.title}>User Management</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => setIsAddingCaretaker(true)}
+          onPress={() => setIsAddingUser(true)}
         >
           <MaterialIcons name="person-add" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
-      {caretakers.length === 0 ? (
+      {/* Stats Cards */}
+      <View style={styles.statsContainer}>
+        <TouchableOpacity 
+          style={[styles.statCard, activeTab === 'admin' && styles.activeStatCard]} 
+          onPress={() => setActiveTab('admin')}
+        >
+          <Text style={[styles.statNumber, activeTab === 'admin' && styles.activeStatText]}>
+            {caretakers.filter(u => u.role === 'admin').length}
+          </Text>
+          <Text style={[styles.statLabel, activeTab === 'admin' && styles.activeStatText]}>ADMINS</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.statCard, activeTab === 'caretaker' && styles.activeStatCard]} 
+          onPress={() => setActiveTab('caretaker')}
+        >
+          <Text style={[styles.statNumber, activeTab === 'caretaker' && styles.activeStatText]}>
+            {caretakers.filter(u => u.role === 'caretaker').length}
+          </Text>
+          <Text style={[styles.statLabel, activeTab === 'caretaker' && styles.activeStatText]}>CARETAKERS</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Tab Title */}
+      <Text style={styles.tabTitle}>
+        {activeTab === 'admin' ? 'Administrator List' : 'Caretaker List'}
+      </Text>
+
+      {filteredUsers.length === 0 ? (
         <View style={styles.emptyState}>
           <MaterialIcons name="group" size={60} color="#bdc3c7" />
-          <Text style={styles.emptyText}>No users found</Text>
+          <Text style={styles.emptyText}>No {activeTab}s found</Text>
         </View>
       ) : (
         <FlatList
-          data={caretakers}
+          data={filteredUsers}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          
         />
       )}
 
       {/* Logout Button on main page */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      <TouchableOpacity style={styles.logoutButton} onPress= {logout}>
         <MaterialIcons name="logout" size={24} color="#E74C3C" />
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
 
-      <Modal visible={isAddingCaretaker} animationType="slide">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
-        >
-          <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add New User</Text>
-              <TouchableOpacity onPress={() => setIsAddingCaretaker(false)}>
-                <MaterialIcons name="close" size={28} color="#7f8c8d" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.formContainer}>
-              <Text style={styles.sectionLabel}>Personal Information</Text>
-              
-              <TextInput
-                style={[styles.input, formErrors.name && styles.inputError]}
-                placeholder="Full Name"
-                value={formData.name}
-                onChangeText={text => setFormData(prev => ({ ...prev, name: text }))} 
-              />
-              {formErrors.name && <Text style={styles.errorText}>{formErrors.name}</Text>}
-
-              <TextInput
-                style={[styles.input, formErrors.email && styles.inputError]}
-                placeholder="Email Address"
-                value={formData.email}
-                onChangeText={text => setFormData(prev => ({ ...prev, email: text }))} 
-                keyboardType="email-address"
-              />
-              {formErrors.email && <Text style={styles.errorText}>{formErrors.email}</Text>}
-
-              <TextInput
-                style={[styles.input, formErrors.contact && styles.inputError]}
-                placeholder="Contact Number"
-                value={formData.contact}
-                onChangeText={text => setFormData(prev => ({ ...prev, contact: text }))} 
-                keyboardType="phone-pad"
-              />
-              {formErrors.contact && <Text style={styles.errorText}>{formErrors.contact}</Text>}
-
-              <Text style={styles.sectionLabel}>Account Details</Text>
-              
-              <TextInput
-                style={[styles.input, formErrors.username && styles.inputError]}
-                placeholder="Username"
-                value={formData.username}
-                onChangeText={text => setFormData(prev => ({ ...prev, username: text }))} 
-              />
-              {formErrors.username && <Text style={styles.errorText}>{formErrors.username}</Text>}
-
-              <TextInput
-                style={[styles.input, formErrors.password && styles.inputError]}
-                placeholder="Password"
-                value={formData.password}
-                onChangeText={text => setFormData(prev => ({ ...prev, password: text }))} 
-                secureTextEntry
-              />
-              {formErrors.password && <Text style={styles.errorText}>{formErrors.password}</Text>}
-
-              <Text style={styles.sectionLabel}>Select Role</Text>
-              <RoleSelector />
-            </View>
-          </ScrollView>
-
-          <View style={styles.fixedButton}>
-            <TouchableOpacity style={styles.submitButton} onPress={handleAddCaretaker}>
-              <Text style={styles.submitButtonText}>Create User</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+      {/* User Form Modal */}
+      <Modal visible={isAddingUser} animationType="slide" transparent={false}>
+        <UserForm 
+          onSubmit={handleAddUser} 
+          onCancel={() => setIsAddingUser(false)} 
+        />
       </Modal>
     </View>
   );
@@ -279,8 +193,54 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
   },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    flex: 1,
+    marginHorizontal: 6,
+    alignItems: 'center',
+    shadowColor: '#2C3E50',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  activeStatCard: {
+    backgroundColor: '#3498db',
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3498db',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  activeStatText: {
+    color: 'white',
+  },
+  tabTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 16,
+    marginTop: 8,
+  },
   listContent: {
-    paddingHorizontal: 8,
+    padding: 8,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
   },
   userCard: {
     backgroundColor: 'white',
@@ -292,15 +252,17 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     overflow: 'hidden',
+    flex: 1,
+    margin: 8,
   },
   cardRoleStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
   },
   adminStrip: {
-    backgroundColor: '#2980b9',
+    backgroundColor: '#3498db',
   },
   caretakerStrip: {
     backgroundColor: '#27ae60',
@@ -314,25 +276,52 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     padding: 16,
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#f1f2f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#dfe6e9',
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2c3e50',
   },
   userName: {
     fontSize: 18,
     fontWeight: '600',
     color: '#2c3e50',
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
+    width: '100%',
   },
   detailContainer: {
-    marginTop: 8,
+    width: '100%',
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 10,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   detailText: {
     fontSize: 14,
     color: '#34495e',
     marginLeft: 8,
+    flex: 1,
   },
   emptyState: {
     flex: 1,
@@ -344,114 +333,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7f8c8d',
     marginTop: 12,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 250, 240, 1.00)',
-  },
-  scrollContainer: {
-    padding: 24,
-    paddingBottom: 100,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#2c3e50',
-  },
-  formContainer: {
-    maxWidth: 600,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  sectionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#34495e',
-    marginBottom: 16,
-    marginTop: 24,
-  },
-  input: {
-    backgroundColor: 'white',
-    height: 56,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#dfe6e9',
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  inputError: {
-    borderColor: '#e74c3c',
-    borderWidth: 2,
-  },
-  errorText: {
-    color: '#e74c3c',
-    fontSize: 14,
-    marginBottom: 12,
-    paddingLeft: 8,
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 16,
-  },
-  roleButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 2,
-    borderColor: '#dfe6e9',
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  selectedRole: {
-    backgroundColor: '#3498db',
-    borderColor: '#3498db',
-  },
-  roleButtonText: {
-    color: '#7f8c8d',
-    fontWeight: '600',
-  },
-  selectedRoleText: {
-    color: 'white',
-  },
-  fixedButton: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(255, 250, 240, 0.9)',
-    padding: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#dfe6e9',
-  },
-  submitButton: {
-    backgroundColor: '#3498db',
-    paddingVertical: 18,
-    borderRadius: 14,
-    shadowColor: '#3498db',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   logoutButton: {
     flexDirection: 'row',
@@ -468,5 +349,5 @@ const styles = StyleSheet.create({
     color: '#E74C3C',
     fontWeight: '600',
     marginLeft: 10,
-  },
+  }
 });

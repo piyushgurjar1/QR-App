@@ -2,7 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 class User {
     static async findByUsername(username) {
-      const [rows] = await db.query('SELECT * FROM user WHERE username = ?', [username]);
+      const [rows] = await db.query('SELECT * FROM Users WHERE username = ?', [username]);
       return rows[0];
     }
   
@@ -12,7 +12,7 @@ class User {
   
       // Insert the new user into the database
       const [result] = await db.query(
-        'INSERT INTO user (name, email, contact, username, password, role) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO Users (name, email, contact, username, password, role) VALUES (?, ?, ?, ?, ?, ?)',
         [name, email, contact, username, hashedPassword, role]
       );
   

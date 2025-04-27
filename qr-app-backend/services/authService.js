@@ -29,9 +29,11 @@ const registerChild = async (name, parent_mail, username, parent_contact, passwo
 
 const loginUser = async (username, password, deviceToken) => {
   // Check the user table first
-  const user = await User.findByUsername(username);
-  let role = 'parent';
   console.log('Debug logs  check');
+  const user = await User.findByUsername(username);
+  console.log("HII");
+
+  let role = 'parent';
   if (!user) {
     // If not found in the user table, check the child_info table
     const child = await Child.findByUsername(username);
