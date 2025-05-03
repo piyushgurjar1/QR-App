@@ -17,11 +17,13 @@ const scanQRCode = async (req, res) => {
     // Find child by username
     const child = await Child.findByUsername(username);
     if (!child) {
+      console.log("Childnot found");
       return res.status(404).json({ error: 'Child not found' });
     }
 
     // Check if the parent's device token is available
     if (!child.device_token) {
+      console.log("Device token not found");
       return res.status(400).json({ error: 'Parent device token not found' });
     }
 
