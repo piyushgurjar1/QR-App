@@ -32,6 +32,7 @@ class Child {
         'UPDATE ChildInfo SET password = ? WHERE username = ?',
         [hashedPassword, username]
       );
+      console.log("Inside update pswd func success");
       return result.affectedRows > 0;
     } catch (error) {
       console.error('Error updating password:', error.message);
