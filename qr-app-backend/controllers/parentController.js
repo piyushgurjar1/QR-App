@@ -1,72 +1,73 @@
-const db = require('../config/db');
 const Child = require('../models/Child');
-const { sendPushNotification } = require('../services/notificationService');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config/constants');
+const db = require('../config/db');
 
-const scanQRCode = async (req, res) => {
+const getChildDetails = async (req, res) => {
   try {
-    const { username, eventType } = req.body;
-    console.log('Username:', username, 'Event Type:', eventType);
+    const username = req.user.username; // Get the username from the token
 
-    if (!username) {
-      return res.status(400).json({ error: 'Invalid QR code data' });
+    // Fetch child details using the username
+    const childDetails = await Child.findByUsername(username);
+
+    if (!childDetails) {
+      return res.status(404).json({ error: 'No child found for this username' });
     }
 
-    if (!eventType || !['checkin', 'checkout'].includes(eventType)) {
-      return res.status(400).json({ error: 'Invalid or missing event type' });
+    res.json(childDetails);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch child details: ' + err.message });
+  }
+};
+
+const changePassword = async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1]; // Get token from header
+
+    if (!token) {
+      return res.status(401).json({ error: 'Access denied. No token provided.' });
+    }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const username = decoded.username;
+    console.log(username);
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ error: 'New password is not there' });
     }
 
+    const success = await Child.updatePassword(username, newPassword);
+    if (success) {
+      res.status(200).json({ message: 'Password updated successfully' });
+    } else {
+      res.status(400).json({ error: 'Failed to update password' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Error updating password: ' + err.message });
+  }
+};
+
+const getAttendanceHistory = async (req, res) => {
+  try {
+    const username = req.user.username;
+
+    // Get child info by username
     const child = await Child.findByUsername(username);
     if (!child) {
       return res.status(404).json({ error: 'Child not found' });
     }
 
-    if (!child.device_token) {
-      return res.status(400).json({ error: 'Parent device token not found' });
-    }
-
-    let title = '';
-    let message = '';
-    const isCheckin = eventType === 'checkin';
-
-    if (isCheckin) {
-      title = 'Child Checkin';
-      message = `Your child ${child.name} has arrived at school safely.`;
-    } else {
-      title = 'Child Checkout';
-      message = `Your child ${child.name} is ready for pickup!`;
-    }
-
-    console.log(`Sending notification to parent with token: ${child.device_token}`);
-    console.log(`Sending notification: ${title} - ${message}`);
-
-    const notificationResult = await sendPushNotification(
-      child.device_token,
-      title,
-      message
+    // Fetch attendance logs
+    const [logs] = await db.query(
+      'SELECT is_checkin, timestamp FROM AttendanceLogs WHERE child_id = ? ORDER BY timestamp DESC',
+      [child.id]
     );
 
-    if (notificationResult && notificationResult.error) {
-      console.warn(`Notification might not have been delivered: ${notificationResult.error}`);
-    }
-
-    const timestamp = new Date();
-    
-    // Insert into AttendanceLogs table
-    await db.query(
-      'INSERT INTO AttendanceLogs (child_id, is_checkin, timestamp) VALUES (?, ?, ?)',
-      [child.id, isCheckin, timestamp]
-    );
-
-    res.status(200).json({ 
-      message: 'QR code scanned and attendance logged successfully', 
-      notificationSent: !notificationResult.error,
-      child 
-    });
-
+    res.status(200).json({ attendance: logs });
   } catch (err) {
-    console.error('Error in scanQRCode:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('Error fetching attendance history:', err.message);
+    res.status(500).json({ error: 'Server error while fetching attendance' });
   }
 };
 
-module.exports = { scanQRCode };
+module.exports = { getChildDetails, changePassword, getAttendanceHistory };
