@@ -29,10 +29,7 @@ const registerChild = async (name, parent_mail, username, parent_contact, passwo
 
 const loginUser = async (username, password, deviceToken) => {
   // Check the user table first
-  console.log('Debug logs  check');
   const user = await User.findByUsername(username);
-  console.log("HII");
-
   let role = 'parent';
   if (!user) {
     // If not found in the user table, check the ChildInfo table
@@ -40,10 +37,6 @@ const loginUser = async (username, password, deviceToken) => {
     if (!child) {
       throw new Error('Invalid username or password');
     }
-
-    console.log('🔍 Comparing password for child...');
-    console.log('Entered password:', password);
-    console.log('Stored hash:', child.password);
 
     // Compare the password
     const isPasswordValid = await bcrypt.compare(password, child.password);
@@ -57,10 +50,6 @@ const loginUser = async (username, password, deviceToken) => {
     await db.query('UPDATE ChildInfo SET device_token = ? WHERE username = ?', [deviceToken, username]);
   } else {
     // Compare the password for admin/caretaker
-    console.log('👨‍🏫 User found:', user);
-    console.log('🔍 Comparing password for user...');
-    console.log('Entered password:', password);
-    console.log('Stored hash:', user.password);
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       console.log('❌ Incorrect password for user');

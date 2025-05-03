@@ -2,12 +2,16 @@ const Child = require('../models/Child');
 const {sendPushNotification} = require('../services/notificationService')
 const scanQRCode = async (req, res) => {
   try {
-    const { username } = req.body;
-    console.log('Username after decoding:', username);
+    const { username, eventType } = req.body;
+    console.log('Username:', username, 'Event Type:', eventType);
 
     // Check if username is valid
     if (!username) {
       return res.status(400).json({ error: 'Invalid QR code data' });
+    }
+
+    if(!eventType){
+      return res.status(400).json({error: 'Missing event type'});
     }
 
     // Find child by username
@@ -21,13 +25,27 @@ const scanQRCode = async (req, res) => {
       return res.status(400).json({ error: 'Parent device token not found' });
     }
 
+    let title = '';
+    let message = '';
+
+    if (eventType === 'checkin') {
+      title = 'Child Checkin';
+      message = `Your child ${child.name} has arrived at school safely.`;
+    } else if (eventType === 'checkout') {
+      title = 'Child Checkout';
+      message = `Your child ${child.name} is ready for pickup!`;
+    } else {
+      return res.status(400).json({ error: 'Invalid event type' });
+    }
+
     console.log(`Sending notification to parent with token: ${child.device_token}`);
+    console.log(`Sending notification: ${title} - ${message}`);
 
     // Send notification to parent
     const notificationResult = await sendPushNotification(
       child.device_token,
-      'Child Pickup',
-      `Your child ${child.name} is ready for pickup!`
+      title,
+      message
     );
 
     // Check if there was an error but don't fail the API response

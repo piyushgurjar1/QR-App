@@ -17,4 +17,24 @@ const getChildDetails = async (req, res) => {
   }
 };
 
-module.exports = { getChildDetails };
+const changePassword = async (req, res) => {
+  try {
+    const username = req.user.username;
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ error: 'New password is not there' });
+    }
+
+    const success = await Child.updatePassword(username, newPassword);
+    if (success) {
+      res.status(200).json({ message: 'Password updated successfully' });
+    } else {
+      res.status(400).json({ error: 'Failed to update password' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Error updating password: ' + err.message });
+  }
+};
+
+module.exports = { getChildDetails, changePassword };
