@@ -1,4 +1,6 @@
 const Child = require('../models/Child');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config/constants');
 
 const getChildDetails = async (req, res) => {
   try {
@@ -19,7 +21,9 @@ const getChildDetails = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const username = req.user.username;
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log(decoded);
+    const username = decoded.username;
     const { newPassword } = req.body;
 
     if (!newPassword) {
