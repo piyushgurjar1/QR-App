@@ -1,6 +1,7 @@
 const Child = require('../models/Child');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/constants');
+const db = require('../config/db');
 
 const getChildDetails = async (req, res) => {
   try {
@@ -46,4 +47,27 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { getChildDetails, changePassword };
+const getAttendanceHistory = async (req, res) => {
+  try {
+    const username = req.user.username;
+
+    // Get child info by username
+    const child = await Child.findByUsername(username);
+    if (!child) {
+      return res.status(404).json({ error: 'Child not found' });
+    }
+
+    // Fetch attendance logs
+    const [logs] = await db.query(
+      'SELECT is_checkin, timestamp FROM AttendanceLogs WHERE child_id = ? ORDER BY timestamp DESC',
+      [child.id]
+    );
+
+    res.status(200).json({ attendance: logs });
+  } catch (err) {
+    console.error('Error fetching attendance history:', err.message);
+    res.status(500).json({ error: 'Server error while fetching attendance' });
+  }
+};
+
+module.exports = { getChildDetails, changePassword, getAttendanceHistory };
