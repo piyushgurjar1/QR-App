@@ -11,6 +11,16 @@ const getAllUsers = async (role) => {
     }
   };
 
+const getAllChilds = async () => {
+    try {
+      const query = 'SELECT * FROM Users WHERE role = ?';
+      const [rows] = await db.query(query, ['child']);
+      return rows;
+    } catch (err) {
+      throw new Error(err.message);
+    }
+  };
+
 const addUser = async (name, email, contact, username, password, role) => {
     try {
       const user = await User.create(name, email, contact, username, password, role);
@@ -20,4 +30,4 @@ const addUser = async (name, email, contact, username, password, role) => {
     }
   };
 
-module.exports = { getAllUsers, addUser };
+module.exports = { getAllUsers, addUser, getAllChilds};

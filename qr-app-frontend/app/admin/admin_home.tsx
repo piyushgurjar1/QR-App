@@ -1,4 +1,3 @@
-// AdminPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router'; 
 import { 
@@ -21,7 +20,8 @@ export default function AdminPage() {
   const [caretakers, setCaretakers] = useState<any[]>([]);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [activeTab, setActiveTab] = useState<'admin' | 'caretaker'>('admin');
-  const { logout } = useAuth()
+  const { logout } = useAuth();
+
   useEffect(() => {
     fetchCaretakers();
   }, []);
@@ -53,10 +53,8 @@ export default function AdminPage() {
     }
   };
 
-  // Filter users based on active tab
   const filteredUsers = caretakers.filter(user => user.role === activeTab);
 
-  // Enhanced user card with proper text truncation
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.userCard}>
       <View style={[styles.cardRoleStrip, item.role === 'admin' ? styles.adminStrip : styles.caretakerStrip]}>
@@ -96,12 +94,20 @@ export default function AdminPage() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>User Management</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setIsAddingUser(true)}
-        >
-          <MaterialIcons name="person-add" size={24} color="white" />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.notifyButton]}
+            onPress={() => router.push("/admin/NotifyParentsScreen")}
+          >
+            <MaterialIcons name="notifications" size={20} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.addButton]}
+            onPress={() => setIsAddingUser(true)}
+          >
+            <MaterialIcons name="person-add" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Stats Cards */}
@@ -349,5 +355,20 @@ const styles = StyleSheet.create({
     color: '#E74C3C',
     fontWeight: '600',
     marginLeft: 10,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionButton: {
+    borderRadius: 14,
+    padding: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  notifyButton: {
+    backgroundColor: '#e67e22',
   }
 });

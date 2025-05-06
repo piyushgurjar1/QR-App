@@ -1,7 +1,7 @@
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { useState, useEffect } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useRouter } from 'expo-router'; 
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import apiClient from "../api/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -9,7 +9,9 @@ export default function QRScannerScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const router = useRouter(); 
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const scanType = params.type ? String(params.type) : "checkin";
 
   useEffect(() => {
     if (permission && !permission.granted) {
@@ -29,7 +31,10 @@ export default function QRScannerScreen() {
     try {
       await apiClient.post(
         "/qr/scan",
-        { username: data },
+        { 
+          username: data,
+          eventType: scanType 
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -37,20 +42,22 @@ export default function QRScannerScreen() {
         }
       );
 
-      Alert.alert("QR Code Scanned", "Data sent successfully", 
+      Alert.alert(
+        "Success",
+        `Student ${scanType === 'checkin' ? 'checked-in' : 'checked-out'} successfully`, 
         [
-        {
-          text: "OK",
-          onPress: () => {
-            setScanned(false);
-            router.push("/careTaker/careTaker_home"); // Redirect after scan
+          {
+            text: "OK",
+            onPress: () => {
+              setScanned(false);
+              router.push("/careTaker/careTaker_home");
+            },
           },
-        },
-      ]);
+        ]
+      );
     } catch (error) {
-      Alert.alert("yaha dikkat hai")
       console.error("Error sending QR data:", error);
-      Alert.alert("Error", "Failed to send QR code data", [
+      Alert.alert("Error", `Failed to process ${scanType}`, [
         { text: "OK", onPress: () => setScanned(false) },
       ]);
     }
@@ -92,7 +99,9 @@ export default function QRScannerScreen() {
       >
         <View style={styles.overlay}>
           <View style={styles.scanFrame} />
-          <Text style={styles.scanText}>Align QR code within frame</Text>
+          <Text style={styles.scanText}>
+            Align QR code to {scanType === 'checkin' ? 'check-in' : 'check-out'}
+          </Text>
         </View>
 
         <View style={styles.buttonContainer}>
@@ -104,6 +113,8 @@ export default function QRScannerScreen() {
     </View>
   );
 }
+
+// Keep your existing styles
 
 const styles = StyleSheet.create({
   container: {
@@ -131,18 +142,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
   },
-  buttonContainer: {
-    position: "absolute",
-    bottom: 40,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  flipButton: {
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 15,
-    borderRadius: 10,
-  },
   buttonText: {
     color: "white",
     fontSize: 16,
@@ -164,5 +163,22 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     marginTop: 20,
+  },
+  buttonContainer: {
+    position: "absolute",
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  flipButton: {
+    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 15,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 });
