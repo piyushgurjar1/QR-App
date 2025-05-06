@@ -66,8 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const redirectBasedOnRole = (role: string | null) => {
     if (role === 'admin') {
       router.replace('/admin/admin_home');
-    } else if (role === 'caretaker') {
-      router.replace('/careTaker/careTaker_home');
+    } else if (role === 'teacher') {
+      router.replace('/teacher/teacher_home');
     } else if (role === 'parent') {
       router.replace('/parent/parent_home');
     }

@@ -50,7 +50,7 @@ export default function QRScannerScreen() {
             text: "OK",
             onPress: () => {
               setScanned(false);
-              router.push("/careTaker/careTaker_home");
+              router.push("/teacher/teacher_home");
             },
           },
         ]

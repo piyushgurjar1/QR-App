@@ -3,7 +3,12 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Scro
 import { useRouter } from 'expo-router';
 import apiClient from '../api/apiClient';
 
-export default function RegisterScreen() {
+interface RegisterScreenProps {
+  onSubmit: (data: any) => void;
+  onBack?: () => void;
+}
+
+export default function RegisterScreen({ onSubmit, onBack }: RegisterScreenProps) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     parentMail: '',

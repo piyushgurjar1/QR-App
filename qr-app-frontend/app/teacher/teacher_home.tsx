@@ -39,7 +39,7 @@ interface RegisterScreenProps {
 const RegisterScreenWithProps =
   RegisterScreen as React.ComponentType<RegisterScreenProps>;
 
-export default function CareTakerHomeScreen() {
+export default function TeacherHomeScreen() {
   const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +49,7 @@ export default function CareTakerHomeScreen() {
   const fetchUserData = async () => {
     try {
       const token = await AsyncStorage.getItem("userToken");
-      const response = await apiClient.get("/caretaker/dashboard", {
+      const response = await apiClient.get("/teacher/dashboard", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserData(response.data);
@@ -93,7 +93,7 @@ export default function CareTakerHomeScreen() {
           <View style={styles.scanFabContainer}>
             <TouchableOpacity
               style={[styles.scanFab, styles.checkinFab]}
-              onPress={() => router.push("/careTaker/scanner?type=checkin")}
+              onPress={() => router.push("/teacher/scanner?type=checkin")}
             >
               <MaterialIcons name="login" size={28} color="white" />
               <Text style={styles.fabText}>Check-in</Text>
@@ -101,7 +101,7 @@ export default function CareTakerHomeScreen() {
 
             <TouchableOpacity
               style={[styles.scanFab, styles.checkoutFab]}
-              onPress={() => router.push("/careTaker/scanner?type=checkout")}
+              onPress={() => router.push("/teacher/scanner?type=checkout")}
             >
               <MaterialIcons name="logout" size={28} color="white" />
               <Text style={styles.fabText}>Check-out</Text>

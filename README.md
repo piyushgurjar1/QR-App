@@ -6,7 +6,7 @@
 
 ### 🔹 Key Features:
 - **Child Registration:** Parents can register their child and generate a unique QR code.  
-- **QR Code Scanning:** Caretakers scan the child's QR code to trigger a notification.  
+- **QR Code Scanning:** teacher scan the child's QR code to trigger a notification.  
 - **Push Notifications:** Parents receive push notifications when their child is ready for pickup.  
 
 ---
@@ -23,7 +23,7 @@
 
 ### 🔑 **Authentication APIs**
 - `POST /api/auth/register` → Register a child  
-- `POST /api/auth/login` → Login for parents/caretakers/admins  
+- `POST /api/auth/login` → Login for parents/teacher/admins  
 
 ### 👶 **Child APIs**
 - `POST /api/child/register` → Register a child  
@@ -43,7 +43,7 @@
 ## 🗄 Database Schema
 
 ### 📌 **Tables**
-- **Users Table:** Stores user (admin/caretaker) information.  
+- **Users Table:** Stores user (admin/teacher) information.  
 - **Child Info Table:** Stores child information.  
 
 ---
@@ -58,7 +58,7 @@
 | Role      | Permissions |
 |-----------|------------|
 | **parent** | Can view child details and receive notifications. |
-| **caretaker** | Can scan QR codes and mark attendance. |
+| **teacher** | Can scan QR codes and mark attendance. |
 | **admin** | Can manage all users and children. |
 
 ---

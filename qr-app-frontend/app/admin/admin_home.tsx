@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'expo-router'; 
 import { 
   View, 
   Text, 
   FlatList, 
-  Modal, 
   TouchableOpacity, 
   StyleSheet, 
   Alert
@@ -12,52 +11,38 @@ import {
 import apiClient from '../api/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
-import UserForm from './UserForm';
 import { useAuth } from '../auth/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function AdminPage() {
-  const router = useRouter(); 
-  const [caretakers, setCaretakers] = useState<any[]>([]);
-  const [isAddingUser, setIsAddingUser] = useState(false);
-  const [activeTab, setActiveTab] = useState<'admin' | 'caretaker'>('admin');
+  const router = useRouter();
+  const [teachers, setTeachers] = React.useState<any[]>([]);
+  const [activeTab, setActiveTab] = React.useState<'admin' | 'teacher'>('admin');
   const { logout } = useAuth();
 
-  useEffect(() => {
-    fetchCaretakers();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchTeachers();
+    }, [])
+  );
 
-  const fetchCaretakers = async () => {
+  const fetchTeachers = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
       const response = await apiClient.get('/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCaretakers(response.data || []);
+      setTeachers(response.data || []);
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch users');
     }
   };
 
-  const handleAddUser = async (userData: any) => {
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      const response = await apiClient.post('/admin/users', userData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setCaretakers(prev => [...prev, response.data]);
-      setIsAddingUser(false);
-      Alert.alert('Success', 'User added successfully');
-    } catch (error : any) {
-      Alert.alert('Error', error.response?.data?.message || 'Registration failed');
-    }
-  };
-
-  const filteredUsers = caretakers.filter(user => user.role === activeTab);
+  const filteredUsers = teachers.filter(user => user.role === activeTab);
 
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.userCard}>
-      <View style={[styles.cardRoleStrip, item.role === 'admin' ? styles.adminStrip : styles.caretakerStrip]}>
+      <View style={[styles.cardRoleStrip, item.role === 'admin' ? styles.adminStrip : styles.teacherStrip]}>
         <MaterialIcons 
           name={item.role === 'admin' ? 'admin-panel-settings' : 'person'} 
           size={18} 
@@ -93,8 +78,14 @@ export default function AdminPage() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>User Management</Text>
+        <Text style={styles.title}>Users</Text>
         <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.studentsButton]}
+            onPress={() => router.push("/admin/PresentStudentsScreen")}
+          >
+            <MaterialIcons name="list-alt" size={20} color="white" />
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.notifyButton]}
             onPress={() => router.push("/admin/NotifyParentsScreen")}
@@ -103,39 +94,37 @@ export default function AdminPage() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.addButton]}
-            onPress={() => setIsAddingUser(true)}
+            onPress={() => router.push("/admin/UserForm")}
           >
             <MaterialIcons name="person-add" size={20} color="white" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Stats Cards */}
       <View style={styles.statsContainer}>
         <TouchableOpacity 
           style={[styles.statCard, activeTab === 'admin' && styles.activeStatCard]} 
           onPress={() => setActiveTab('admin')}
         >
           <Text style={[styles.statNumber, activeTab === 'admin' && styles.activeStatText]}>
-            {caretakers.filter(u => u.role === 'admin').length}
+            {teachers.filter(u => u.role === 'admin').length}
           </Text>
           <Text style={[styles.statLabel, activeTab === 'admin' && styles.activeStatText]}>ADMINS</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.statCard, activeTab === 'caretaker' && styles.activeStatCard]} 
-          onPress={() => setActiveTab('caretaker')}
+          style={[styles.statCard, activeTab === 'teacher' && styles.activeStatCard]} 
+          onPress={() => setActiveTab('teacher')}
         >
-          <Text style={[styles.statNumber, activeTab === 'caretaker' && styles.activeStatText]}>
-            {caretakers.filter(u => u.role === 'caretaker').length}
+          <Text style={[styles.statNumber, activeTab === 'teacher' && styles.activeStatText]}>
+            {teachers.filter(u => u.role === 'teacher').length}
           </Text>
-          <Text style={[styles.statLabel, activeTab === 'caretaker' && styles.activeStatText]}>CARETAKERS</Text>
+          <Text style={[styles.statLabel, activeTab === 'teacher' && styles.activeStatText]}>teacher</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Tab Title */}
       <Text style={styles.tabTitle}>
-        {activeTab === 'admin' ? 'Administrator List' : 'Caretaker List'}
+        {activeTab === 'admin' ? 'Administrator List' : 'Teacher List'}
       </Text>
 
       {filteredUsers.length === 0 ? (
@@ -150,26 +139,17 @@ export default function AdminPage() {
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          
         />
       )}
 
-      {/* Logout Button on main page */}
-      <TouchableOpacity style={styles.logoutButton} onPress= {logout}>
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
         <MaterialIcons name="logout" size={24} color="#E74C3C" />
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
-
-      {/* User Form Modal */}
-      <Modal visible={isAddingUser} animationType="slide" transparent={false}>
-        <UserForm 
-          onSubmit={handleAddUser} 
-          onCancel={() => setIsAddingUser(false)} 
-        />
-      </Modal>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -189,15 +169,26 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
     letterSpacing: 0.5,
   },
-  addButton: {
-    backgroundColor: '#3498db',
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionButton: {
     borderRadius: 14,
     padding: 12,
-    shadowColor: '#3498db',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 5,
+  },
+  studentsButton: {
+    backgroundColor: '#9b59b6',
+  },
+  notifyButton: {
+    backgroundColor: '#e67e22',
+  },
+  addButton: {
+    backgroundColor: '#3498db',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -245,9 +236,6 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 8,
   },
-  columnWrapper: {
-    justifyContent: 'space-between',
-  },
   userCard: {
     backgroundColor: 'white',
     borderRadius: 16,
@@ -270,7 +258,7 @@ const styles = StyleSheet.create({
   adminStrip: {
     backgroundColor: '#3498db',
   },
-  caretakerStrip: {
+  teacherStrip: {
     backgroundColor: '#27ae60',
   },
   roleText: {
@@ -356,19 +344,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 10,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  actionButton: {
-    borderRadius: 14,
-    padding: 12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  notifyButton: {
-    backgroundColor: '#e67e22',
-  }
 });
