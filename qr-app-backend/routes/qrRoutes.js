@@ -4,6 +4,6 @@ const { authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.post('/scan', authorize(['admin','caretaker']), qrController.scanQRCode);
+router.post('/scan', authorize(['admin','teacher']), qrController.scanQRCode);
 
 module.exports = router;

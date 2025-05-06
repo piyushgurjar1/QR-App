@@ -8,7 +8,7 @@ const qrRoutes = require('./routes/qrRoutes');
 const childRoutes = require('./routes/childRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const parentRoutes = require('./routes/parentRoutes'); 
-const caretakerRoutes = require('./routes/caretakerRoutes');
+const teacherRoutes = require('./routes/teacherRoutes');
 
 const app = express();
 
@@ -21,7 +21,7 @@ app.use('/api/test', testRoutes);
 app.use('/api/child', childRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/parent', parentRoutes);
-app.use('/api/caretaker', caretakerRoutes);
+app.use('/api/teacher', teacherRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

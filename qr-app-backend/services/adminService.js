@@ -11,16 +11,35 @@ const getAllUsers = async (role) => {
     }
   };
 
-const getAllChilds = async () => {
+  const getAllChilds = async () => {
     try {
-      const query = 'SELECT * FROM Users WHERE role = ?';
-      const [rows] = await db.query(query, ['child']);
+      const query = `
+        SELECT
+          ci.name,
+          latest.max_ts AS timestamp
+        FROM (
+          SELECT
+            child_id,
+            MAX(timestamp) AS max_ts
+          FROM AttendanceLogs
+          WHERE DATE(timestamp) = CURDATE()
+          GROUP BY child_id
+        ) AS latest
+        JOIN AttendanceLogs AS al
+          ON al.child_id = latest.child_id
+         AND al.timestamp = latest.max_ts
+         AND al.is_checkin = TRUE
+        JOIN ChildInfo AS ci
+          ON ci.id = latest.child_id;
+      `;
+  
+      const [rows] = await db.query(query);
       return rows;
     } catch (err) {
       throw new Error(err.message);
     }
   };
-
+  
 const addUser = async (name, email, contact, username, password, role) => {
     try {
       const user = await User.create(name, email, contact, username, password, role);

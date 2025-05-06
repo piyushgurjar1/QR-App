@@ -4,7 +4,7 @@ const { authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.get('/:id', authorize(['admin', 'caretaker']), childController.getChildById);
-router.get('/', authorize(['admin', 'caretaker']), childController.getAllChildren);
+router.get('/:id', authorize(['admin', 'teacher']), childController.getChildById);
+router.get('/', authorize(['admin', 'teacher']), childController.getAllChildren);
 
 module.exports = router;

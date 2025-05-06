@@ -49,13 +49,13 @@ const loginUser = async (username, password, deviceToken) => {
     // Update the parent's device token in the database
     await db.query('UPDATE ChildInfo SET device_token = ? WHERE username = ?', [deviceToken, username]);
   } else {
-    // Compare the password for admin/caretaker
+    // Compare the password for admin/teacher
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       console.log('❌ Incorrect password for user');
       throw new Error('Invalid username or password');
     }
-    role = user.role; // admin or caretaker
+    role = user.role; // admin or teacher
   }
 
   // Generate a JWT token

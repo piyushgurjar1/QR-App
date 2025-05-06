@@ -11,6 +11,15 @@ const getAllUsers = async (req, res) => {
     }
   };
 
+const getAllChilds = async (req, res) => {
+    try {
+      const users = await adminService.getAllChilds();
+      res.status(200).json(users);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  };
+
 const addUser = async (req, res) => {
     try {
       const { name, email, contact, username, password, role } = req.body;
@@ -20,4 +29,4 @@ const addUser = async (req, res) => {
       res.status(500).json({ error: err.message });
     }
   };
-module.exports = { getAllUsers, addUser };
+module.exports = { getAllUsers, addUser, getAllChilds};
