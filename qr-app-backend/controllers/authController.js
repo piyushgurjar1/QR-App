@@ -2,6 +2,7 @@ const authService = require('../services/authService');
 
 const registerChild = async (req, res) => {
   try {
+    console.log("4");
     const { parent_mail, parent_contact, child_first_name, child_last_name, username, password, confirm_password } = req.body;
 
     if (password !== confirm_password) {

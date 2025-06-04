@@ -29,7 +29,7 @@ const registerChild = async (name, parent_mail, username, parent_contact, passwo
 
 const loginUser = async (username, password, deviceToken) => {
   // Check the user table first
-  const user = await User.findByUsername(username);
+  const user = await User.findByUsername(username)
   let role = 'parent';
   if (!user) {
     // If not found in the user table, check the ChildInfo table
@@ -59,7 +59,7 @@ const loginUser = async (username, password, deviceToken) => {
   }
 
   // Generate a JWT token
-  const token = jwt.sign({ username, role }, JWT_SECRET, { expiresIn: '1h' });
+  const token = jwt.sign({ username, role }, JWT_SECRET, { expiresIn: '72h' });
 
   return { role, token };
 };
