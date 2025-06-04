@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import apiClient from '../api/apiClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface RegisterScreenProps {
   onSubmit: (data: any) => void;
@@ -42,6 +43,7 @@ export default function RegisterScreen({ onSubmit, onBack }: RegisterScreenProps
     if (!validateForm()) return;
 
     try {
+      const token = await AsyncStorage.getItem('userToken');
       await apiClient.post('/auth/register', {
         parent_mail: formData.parentMail,
         parent_contact: formData.parentContact,
@@ -50,12 +52,13 @@ export default function RegisterScreen({ onSubmit, onBack }: RegisterScreenProps
         username: formData.username,
         password: formData.password,
         confirm_password: formData.confirmPassword
+      },{
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       Alert.alert('Success', 'Registration successful! Please login.');
       router.push('/auth/login');
     } catch (error: any) {
-      console.error(error);
       Alert.alert('Error', error.response?.data?.message || 'Registration failed');
     }
   };

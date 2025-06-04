@@ -56,7 +56,7 @@ export default function QRScannerScreen() {
         ]
       );
     } catch (error) {
-      console.error("Error sending QR data:", error);
+    
       Alert.alert("Error", `Failed to process ${scanType}`, [
         { text: "OK", onPress: () => setScanned(false) },
       ]);

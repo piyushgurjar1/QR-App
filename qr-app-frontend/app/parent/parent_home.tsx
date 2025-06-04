@@ -87,7 +87,6 @@ export default function ParentPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      console.log(error);
       setPasswordError("Failed to update password");
     } finally {
       setIsSubmitting(false);

@@ -54,7 +54,7 @@ export default function TeacherHomeScreen() {
       });
       setUserData(response.data);
     } catch (error) {
-      console.log("Error fetching user data", error);
+    
     } finally {
       setLoading(false);
     }

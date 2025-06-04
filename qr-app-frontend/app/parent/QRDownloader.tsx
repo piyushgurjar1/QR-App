@@ -69,7 +69,7 @@ const QRDownloader: React.FC<QRDownloaderProps> = ({
         saveQRCodeToGallery(dataURL);
       });
     } catch (error) {
-      console.error('Download error:', error);
+ 
       Alert.alert('Error', 'Failed to generate QR code');
       setLoading(false);
     }
@@ -101,7 +101,7 @@ const QRDownloader: React.FC<QRDownloaderProps> = ({
       // Show success message
       Alert.alert('Success', 'QR Code saved to your gallery');
     } catch (error) {
-      console.error('Error saving QR code:', error);
+
       Alert.alert('Error', 'Failed to save QR code to gallery');
     } finally {
       setLoading(false);

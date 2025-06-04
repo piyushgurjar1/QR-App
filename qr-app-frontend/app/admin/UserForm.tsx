@@ -82,13 +82,11 @@ export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
       const token = await AsyncStorage.getItem('userToken');
       const response = await apiClient.post('/admin/users', userData, {
         headers: { Authorization: `Bearer ${token}` }
-      });
-      
+      });   
       setCaretakers(prev => [...prev, response.data]);
       setIsAddingUser(false);
       Alert.alert('Success', 'User added successfully');
     } catch (error : any) {
-      console.log("yaha pe");
       Alert.alert('Error', error.response?.data?.message || 'Registration failed');
     }
   };
