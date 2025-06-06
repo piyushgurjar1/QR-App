@@ -10,7 +10,6 @@ import apiClient from '../api/apiClient';
 export default function RegisterStudentsFromCSV() {
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<any>(null);
-  const [progress, setProgress] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
   const [successCount, setSuccessCount] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
@@ -20,7 +19,7 @@ export default function RegisterStudentsFromCSV() {
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['text/csv', 'text/comma-separated-values', 'application/csv'], // More specific CSV types
+        type: ['text/csv', 'text/comma-separated-values', 'application/csv'],
         copyToCacheDirectory: true,
       });
 
@@ -34,7 +33,7 @@ export default function RegisterStudentsFromCSV() {
         }
         
         setSelectedFile(file);
-        setProgress(0);
+        setTotalStudents(0);
         setSuccessCount(0);
         setErrorCount(0);
         setResults([]);
@@ -105,6 +104,87 @@ export default function RegisterStudentsFromCSV() {
     return result;
   };
 
+  const parseCSVData = (content: string) => {
+    const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+    
+    if (lines.length < 2) {
+      throw new Error('CSV file must contain at least a header row and one data row');
+    }
+    
+    // Remove header row
+    const headerRow = lines.shift();
+    console.log('Header row:', headerRow);
+    
+    const students = [];
+    const invalidRows = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      try {
+        const fields = parseCSVLine(lines[i]);
+
+        if (fields.length < 7) {
+          invalidRows.push({
+            row: i + 2, // +2 because we removed header and arrays are 0-indexed
+            error: `Invalid CSV format - expected 7 fields, got ${fields.length}`,
+            data: lines[i]
+          });
+          continue;
+        }
+
+        const [
+          parent_mail,
+          parent_contact,
+          child_first_name,
+          child_last_name,
+          username,
+          password,
+          confirm_password
+        ] = fields;
+
+        // Validate required fields
+        if (!parent_mail?.trim() || !parent_contact?.trim() || !child_first_name?.trim() || !username?.trim() || !password?.trim()) {
+          invalidRows.push({
+            row: i + 2,
+            error: 'Missing required fields',
+            username: username?.trim() || `Row ${i + 2}`,
+            data: lines[i]
+          });
+          continue;
+        }
+
+        if (password.trim() !== confirm_password?.trim()) {
+          invalidRows.push({
+            row: i + 2,
+            error: 'Passwords do not match',
+            username: username.trim(),
+            data: lines[i]
+          });
+          continue;
+        }
+
+        students.push({
+          parent_mail: parent_mail.trim(),
+          parent_contact: parent_contact.trim(),
+          child_first_name: child_first_name.trim(),
+          child_last_name: child_last_name?.trim() || '',
+          username: username.trim(),
+          password: password.trim(),
+          confirm_password: confirm_password?.trim()
+        });
+
+      } catch (error: any) {
+        invalidRows.push({
+          row: i + 2,
+          error: error.message || 'Failed to parse row',
+          username: `Row ${i + 2}`,
+          data: lines[i]
+        });
+      }
+    }
+
+    return { students, invalidRows };
+  };
+
   const registerStudents = async () => {
     if (!selectedFile) {
       Alert.alert('Error', 'Please select a valid CSV file first');
@@ -112,7 +192,6 @@ export default function RegisterStudentsFromCSV() {
     }
 
     setIsProcessing(true);
-    setProgress(0);
     setSuccessCount(0);
     setErrorCount(0);
     setResults([]);
@@ -122,120 +201,84 @@ export default function RegisterStudentsFromCSV() {
       if (!token) {
         throw new Error('Authentication token not found');
       }
-    
+
+      console.log('Reading file content...');
       const content = await readFileContent(selectedFile);
       
       if (!content || content.trim() === '') {
         throw new Error('File is empty or could not be read');
       }
-    
+
+      console.log('Parsing CSV data...');
+      const { students, invalidRows } = parseCSVData(content);
       
-      const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+      console.log(`Found ${students.length} valid students and ${invalidRows.length} invalid rows`);
       
-      if (lines.length < 2) {
-        throw new Error('CSV file must contain at least a header row and one data row');
-      }
-      
-      // Remove header row
-      const headerRow = lines.shift();
-      
-      
-      const dataLines = lines;
-      setTotalStudents(dataLines.length);
+      // Set total students including invalid ones for proper counting
+      setTotalStudents(students.length + invalidRows.length);
 
-      let currentSuccessCount = 0;
-      let currentErrorCount = 0;
-      const currentResults: any[] = [];
+      // Add invalid rows to results immediately
+      const initialResults = invalidRows.map(row => ({
+        username: row.username,
+        status: 'error',
+        message: row.error
+      }));
 
-      for (let i = 0; i < dataLines.length; i++) {
-        try {
-          
-          // Use improved CSV parsing
-          const fields = parseCSVLine(dataLines[i]);
+      setResults(initialResults);
+      setErrorCount(invalidRows.length);
 
-          if (fields.length < 7) {
-            throw new Error(`Invalid CSV format - expected 7 fields, got ${fields.length}`);
-          }
-
-          const [
-            parent_mail,
-            parent_contact,
-            child_first_name,
-            child_last_name,
-            username,
-            password,
-            confirm_password
-          ] = fields;
-
-          // Validate required fields
-          if (!parent_mail?.trim() || !parent_contact?.trim() || !child_first_name?.trim() || !username?.trim() || !password?.trim()) {
-            throw new Error('Missing required fields');
-          }
-
-          if (password.trim() !== confirm_password?.trim()) {
-            throw new Error('Passwords do not match');
-          }
-
-          console.log('Registering student:', username);
-
-          // Register student
-          const response = await apiClient.post(
-            '/auth/register',
-            {
-              parent_mail: parent_mail.trim(),
-              parent_contact: parent_contact.trim(),
-              child_first_name: child_first_name.trim(),
-              child_last_name: child_last_name?.trim() || '',
-              username: username.trim(),
-              password: password.trim(),
-              confirm_password: confirm_password?.trim()
-            },
-            {
-              headers: { Authorization: `Bearer ${token}` }
-            }
-          );
-
-          console.log('Registration successful for:', username);
-          currentSuccessCount++;
-          currentResults.push({
-            username: username.trim(),
-            status: 'success',
-            message: 'Registered successfully'
-          });
-          
-          setSuccessCount(currentSuccessCount);
-        } catch (error: any) {
-          console.error(`Error registering student on line ${i + 1}:`, error);
-          currentErrorCount++;
-          
-          const username = parseCSVLine(dataLines[i])[4]?.trim() || `Row ${i + 1}`;
-          const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
-          
-          currentResults.push({
-            username,
-            status: 'error',
-            message: errorMessage
-          });
-          
-          setErrorCount(currentErrorCount);
-        }
-        
-        setProgress(i + 1);
-        setResults([...currentResults]);
-        
-        // Small delay to prevent overwhelming the server
-        if (i < dataLines.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
+      if (students.length === 0) {
+        Alert.alert('Error', 'No valid student data found in CSV file');
+        return;
       }
 
+      console.log('Sending bulk registration request...');
+      
+      // Send bulk registration request
+      const response = await apiClient.post(
+        '/auth/registerBulk', // Assuming this is your bulk endpoint
+        { students },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      console.log('Bulk registration response:', response.data);
+
+      // Process results from bulk API
+      const bulkResults = response.data.results || [];
+      const successResults = bulkResults.filter((result: any) => result.status === 'success');
+      const errorResults = bulkResults.filter((result: any) => result.status === 'error');
+
+      // Update state with final results
+      const finalResults = [...initialResults, ...bulkResults];
+      setResults(finalResults);
+      setSuccessCount(successResults.length);
+      setErrorCount(invalidRows.length + errorResults.length);
+
+      // Show completion alert
+      const totalSuccess = successResults.length;
+      const totalErrors = invalidRows.length + errorResults.length;
+      
       Alert.alert(
         'Registration Complete',
-        `Successfully registered ${currentSuccessCount} students. ${currentErrorCount} failed.`
+        `Successfully registered ${totalSuccess} students.\n${totalErrors} failed.`
       );
+
     } catch (error: any) {
       console.error('Registration process error:', error);
-      Alert.alert('Error', error.message || 'Failed to process CSV file');
+      
+      let errorMessage = 'Failed to process CSV file';
+      
+      if (error.response) {
+        // API error
+        errorMessage = error.response.data?.message || error.response.data?.error || 'Server error occurred';
+      } else if (error.message) {
+        // Other errors (file reading, parsing, etc.)
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -279,14 +322,25 @@ export default function RegisterStudentsFromCSV() {
             {isProcessing && (
               <View style={styles.progressContainer}>
                 <Text style={styles.progressText}>
-                  Processed: {progress}/{totalStudents}
+                  Processing bulk registration...
+                </Text>
+                <Text style={styles.progressText}>
+                  Please wait while we register all students
+                </Text>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, styles.indeterminateProgress]} />
+                </View>
+              </View>
+            )}
+
+            {!isProcessing && totalStudents > 0 && (
+              <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>
+                  Total Students: {totalStudents}
                 </Text>
                 <Text style={styles.progressText}>
                   Success: {successCount} | Errors: {errorCount}
                 </Text>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: `${totalStudents > 0 ? (progress / totalStudents) * 100 : 0}%` }]} />
-                </View>
               </View>
             )}
 
@@ -386,6 +440,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#2c3e50',
     marginBottom: 8,
+    textAlign: 'center',
   },
   progressBar: {
     height: 10,
@@ -396,6 +451,10 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     backgroundColor: '#2ecc71',
+  },
+  indeterminateProgress: {
+    width: '100%',
+    opacity: 0.7,
   },
   resultsContainer: {
     marginTop: 10,

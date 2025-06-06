@@ -29,6 +29,62 @@ const registerChild = async (req, res) => {
   }
 };
 
+const registerChildBulk = async (req, res) => {
+  const students = req.body.students;
+
+  if (!Array.isArray(students) || students.length === 0) {
+    return res.status(400).json({ error: 'No student data provided' });
+  }
+
+  const results = [];
+
+  for (const student of students) {
+    const {
+      parent_mail,
+      parent_contact,
+      child_first_name,
+      child_last_name,
+      username,
+      password,
+      confirm_password
+    } = student;
+
+    const name = `${child_first_name} ${child_last_name}`;
+
+    // Individual result object
+    const result = { username };
+
+    try {
+      if (!parent_mail || !username || !password || !confirm_password || !child_first_name || !parent_contact) {
+        throw new Error('Missing required fields');
+      }
+
+      if (password !== confirm_password) {
+        throw new Error('Passwords do not match');
+      }
+
+      const child = await authService.registerChild(
+        name,
+        parent_mail,
+        username,
+        parent_contact,
+        password
+      );
+
+      result.status = 'success';
+      result.message = 'Child registered successfully';
+    } catch (err) {
+      result.status = 'error';
+      result.message = err.message || 'Registration failed';
+    }
+
+    results.push(result);
+  }
+
+  return res.status(200).json({ results });
+};
+
+
 const login = async (req, res) => {
   try {
     const { username, password, deviceToken } = req.body;
@@ -41,4 +97,4 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { registerChild, login };
+module.exports = { registerChild, login, registerChildBulk};

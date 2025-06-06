@@ -59,7 +59,7 @@ const loginUser = async (username, password, deviceToken) => {
   }
 
   // Generate a JWT token
-  const token = jwt.sign({ username, role }, JWT_SECRET, { expiresIn: '72h' });
+  const token = jwt.sign({ username, role }, JWT_SECRET, { expiresIn: '168h' });
 
   return { role, token };
 };
