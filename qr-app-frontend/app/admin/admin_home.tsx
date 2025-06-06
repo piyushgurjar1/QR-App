@@ -80,6 +80,14 @@ export default function AdminPage() {
       <View style={styles.header}>
         <Text style={styles.title}>Users</Text>
         <View style={styles.headerButtons}>
+          {/* Add CSV Upload Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.csvButton]}
+            onPress={() => router.push("/admin/RegisterStudentsFromCSV")}
+          >
+            <MaterialIcons name="file-upload" size={20} color="white" />
+          </TouchableOpacity>
+          
           <TouchableOpacity
             style={[styles.actionButton, styles.studentsButton]}
             onPress={() => router.push("/admin/PresentStudentsScreen")}
@@ -150,7 +158,6 @@ export default function AdminPage() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -180,6 +187,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 5,
+  },
+  csvButton: {
+    backgroundColor: '#16a085',
   },
   studentsButton: {
     backgroundColor: '#9b59b6',
