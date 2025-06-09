@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, FlatList } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -284,6 +284,18 @@ export default function RegisterStudentsFromCSV() {
     }
   };
 
+  const renderResultItem = ({ item, index }: { item: any; index: number }) => (
+    <View 
+      style={[
+        styles.resultItem,
+        item.status === 'success' ? styles.successItem : styles.errorItem
+      ]}
+    >
+      <Text style={styles.resultUsername}>{item.username}</Text>
+      <Text style={styles.resultMessage}>{item.message}</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>      
@@ -291,7 +303,8 @@ export default function RegisterStudentsFromCSV() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* Fixed content area - not scrollable */}
+      <View style={styles.fixedContent}>
         <Text style={styles.instructions}>
           CSV Format: parent_mail, parent_contact, child_first_name, child_last_name, username, password, confirm_password
         </Text>
@@ -308,7 +321,7 @@ export default function RegisterStudentsFromCSV() {
         </TouchableOpacity>
 
         {selectedFile && (
-          <View>
+          <View style={styles.fileSelectedContainer}>
             <TouchableOpacity 
               style={[styles.registerButton, isProcessing && styles.disabledButton]} 
               onPress={registerStudents}
@@ -343,29 +356,24 @@ export default function RegisterStudentsFromCSV() {
                 </Text>
               </View>
             )}
-
-            {results.length > 0 && (
-              <View style={styles.resultsContainer}>
-                <Text style={styles.sectionTitle}>Registration Results:</Text>
-                <ScrollView style={styles.resultsScroll}>
-                  {results.map((result, index) => (
-                    <View 
-                      key={index} 
-                      style={[
-                        styles.resultItem,
-                        result.status === 'success' ? styles.successItem : styles.errorItem
-                      ]}
-                    >
-                      <Text style={styles.resultUsername}>{result.username}</Text>
-                      <Text style={styles.resultMessage}>{result.message}</Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </View>
         )}
-      </ScrollView>
+      </View>
+
+      {/* Results section - independently scrollable and takes remaining space */}
+      {results.length > 0 && (
+        <View style={styles.resultsContainer}>
+          <Text style={styles.sectionTitle}>Registration Results:</Text>
+          <FlatList
+            data={results}
+            renderItem={renderResultItem}
+            keyExtractor={(item, index) => `result-${index}`}
+            showsVerticalScrollIndicator={true}
+            style={styles.resultsList}
+            contentContainerStyle={styles.resultsContent}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -392,9 +400,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
   },
-  content: {
-    flexGrow: 1,
-    paddingBottom: 20,
+  fixedContent: {
+    // This will take only the space it needs
   },
   instructions: {
     fontSize: 14,
@@ -414,6 +421,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
   },
+  fileSelectedContainer: {
+    marginBottom: 20,
+  },
   registerButton: {
     backgroundColor: '#3498db',
     padding: 15,
@@ -431,7 +441,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   progressContainer: {
-    marginBottom: 20,
+    marginBottom: 2,
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
@@ -457,16 +467,23 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   resultsContainer: {
-    marginTop: 10,
-  },
-  resultsScroll: {
-    maxHeight: 300,
+    flex: 1, // Takes remaining space
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 2,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#2c3e50',
     marginBottom: 12,
+  },
+  resultsList: {
+    flex: 1, // Takes all available space in resultsContainer
+  },
+  resultsContent: {
+    paddingBottom: 10,
   },
   resultItem: {
     padding: 12,
